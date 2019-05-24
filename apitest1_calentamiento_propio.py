@@ -126,7 +126,8 @@ columnas_exportar = ['ID',
     'Secciones intento aparcamiento',
     'Seccion de paso',
     'Utilidad relativa',
-    'Utilidades iteraciones']
+    'Utilidades iteraciones','track',
+    'track_secciones']
 indice_exportar = pd.Index([], dtype=dtype(int), name="ID")
 df_exportar = pd.DataFrame(columns=columnas_exportar, index=indice_exportar)
 ##df_exportar.set_index('ID', inplace=True)
@@ -673,11 +674,14 @@ def AAPIManage(time, timeSta, timTrans, SimStep):
                         seccion_vehiculo, time_salida)
                     # paramos el coche
                     vehiculos_parados[vehiculo] = time
+                    df_exportar.loc[vehiculo, 'track'].append((seccion_vehiculo,time,'aparca'))
 
                 else:  # cuando no hay plazas disponibles le mandamos a una libre
 
                     ##                    AKIPrintString("No hay sitio para el vehiculo: {} asignado nuevo destino".format(str(vehiculo)))
                     df_exportar.loc[vehiculo, 'Intentos aparcamiento'] += 1
+                    df_exportar.loc[vehiculo, 'track'].append((seccion_vehiculo,time,'no sitio'))
+                    df_exportar.loc[vehiculo, 'track_secciones'].append([])
                     reasigna_plaza(vehiculo, time)
 
     except Exception as e:
@@ -726,6 +730,9 @@ def AAPIEnterVehicle(idveh, idsection):
             df_exportar.loc[idveh, 'Tarifa'] = []
             df_exportar.loc[idveh, 'ID'] = idveh
             df_exportar.loc[idveh, 'Utilidades iteraciones'] = []
+            df_exportar.loc[idveh, 'track'] = []
+            df_exportar.loc[idveh, 'track'].append((idsection,0,'entra'))
+            df_exportar.loc[idveh, 'track_secciones'] = [[],]
             df_exportar.loc[idveh, 'Secciones intento aparcamiento'] = []
             seccion_aparcamiento, es_parking, distancia = genera_seccion_aparcamiento(
                 seccion_destino, idveh)  # 893,True
@@ -788,6 +795,7 @@ def AAPIExitVehicle(idveh, idsection):
     if idveh in lista_id_objetivo:
         with candado:
             cola_diccionarios = df_exportar.to_json()
+        df_exportar.loc[idveh, 'track'].append((idsection,99999999999999,'sale'))
         lista_id_objetivo.remove(idveh)
     else:
         transito = transito - 1
@@ -797,30 +805,37 @@ def AAPIExitVehicle(idveh, idsection):
 
 def AAPIEnterVehicleSection(idveh, idsection, atime):
     try:
-        if idveh in lista_id_objetivo and idsection in secciones_park and idsection != secciones_destino_vehiculo[
+        #guardamos las seciones por las que va pasando el vehiculo en su busqueda de de sitio            
+        if idveh in lista_id_objetivo:
+            df_exportar.loc[idveh, 'track'].append((idsection,atime,'paso'))
+            if idsection in secciones_park and idsection != secciones_destino_vehiculo[
                 idveh] and plazas_park_free[idsection] > 0:
-            tiempo_busqueda_transcurrido = (
-                atime - df_exportar.loc[idveh, 'Hora Entrada']) / 60
-            seccion_destino = df_exportar.loc[idveh, 'Nodo destino']
-            seccion_aparcamiento, es_parking, distancia = genera_seccion_aparcamiento(
-                seccion_destino, idveh, seccion_origen=idsection, tiempo_busqueda_transcurrido=tiempo_busqueda_transcurrido)
-            if seccion_aparcamiento:
-                df_exportar.loc[idveh, 'Nodo aparcamiento'] = int(
-                    seccion_aparcamiento)
-                df_exportar.loc[idveh, 'Nodo destino'] = int(seccion_destino)
-                df_exportar.loc[idveh, 'Secciones intento aparcamiento'].append(
-                    int(seccion_aparcamiento))
-                df_exportar.loc[idveh,
-                                'Distancia entre nodos'] = float(distancia)
-                df_exportar.loc[idveh, 'Parking'] = es_parking
-                df_exportar.loc[idveh, 'Seccion de paso'] = 'si'
-                centroide_aparcamiento = dict_centroide_secciones[int(
-                    seccion_aparcamiento)]
-                info_estatica_vehiculo = AKIVehTrackedGetStaticInf(idveh)
-                info_estatica_vehiculo.__setattr__(
-                    "centroidDest", int(centroide_aparcamiento))
-                AKIVehTrackedSetStaticInf(idveh, info_estatica_vehiculo)
-                secciones_destino_vehiculo[idveh] = int(seccion_aparcamiento)
+                tiempo_busqueda_transcurrido = (
+                    atime - df_exportar.loc[idveh, 'Hora Entrada']) / 60
+                seccion_destino = df_exportar.loc[idveh, 'Nodo destino']
+                seccion_aparcamiento, es_parking, distancia = genera_seccion_aparcamiento(
+                    seccion_destino, idveh, seccion_origen=idsection, tiempo_busqueda_transcurrido=tiempo_busqueda_transcurrido)
+                if seccion_aparcamiento:
+                    df_exportar.loc[idveh, 'Nodo aparcamiento'] = int(
+                        seccion_aparcamiento)
+                    df_exportar.loc[idveh, 'Nodo destino'] = int(seccion_destino)
+                    df_exportar.loc[idveh, 'Secciones intento aparcamiento'].append(
+                        int(seccion_aparcamiento))
+                    df_exportar.loc[idveh,
+                                    'Distancia entre nodos'] = float(distancia)
+                    df_exportar.loc[idveh, 'Parking'] = es_parking
+                    df_exportar.loc[idveh, 'Seccion de paso'] = 'si'
+                    centroide_aparcamiento = dict_centroide_secciones[int(
+                        seccion_aparcamiento)]
+                    info_estatica_vehiculo = AKIVehTrackedGetStaticInf(idveh)
+                    info_estatica_vehiculo.__setattr__(
+                        "centroidDest", int(centroide_aparcamiento))
+                    AKIVehTrackedSetStaticInf(idveh, info_estatica_vehiculo)
+                    secciones_destino_vehiculo[idveh] = int(seccion_aparcamiento)
+                    df_exportar.loc[idveh, 'track'].append((idsection,atime,'seccion_recalculada'))
+                    df_exportar.loc[idveh, 'track_secciones'].append([])
+            else:
+                df_exportar.loc[idveh, 'track_secciones'][-1].append(idsection)
 
     except BaseException:
         logging.error(traceback.format_exc())
