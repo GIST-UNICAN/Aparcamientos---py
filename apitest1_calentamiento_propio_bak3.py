@@ -18,7 +18,7 @@ from multiprocessing.connection import Listener
 from multiprocessing.connection import Client
 from multiprocessing import Queue
 import threading
-from socket import socket, AF_INET, SOCK_STREAM, error as socket_error
+from socket import socket, AF_INET, SOCK_STREAM
 from contextlib import closing
 from marshal import dumps
 import Queue
@@ -174,24 +174,21 @@ def recibe_datos():
     tamagno_del_bufer = 524288
     host = ''                 # Symbolic name meaning all available interfaces
     puerto_inicial = 50000
-    cuenta_ports = count(50000)
+    port = count(50000)
     ejecutable_python = "C:\\Anaconda3\\python.exe"
     script_python = "E:\\OneDrive - Universidad de Cantabria\\Recordar GIST - VARIOS\\Aparcamientos\\SCRIPTS PARK\\rec37.py"
-    s = socket(AF_INET, SOCK_STREAM)
     while True:
-        port = next(cuenta_ports)
-        try:
-            s.bind((host, port))
-        except socket_error:
-            continue
-        else:
-            break
-    try:
-        s.listen(max_queued_connections)
         p = Popen((ejecutable_python, script_python, next(port)))
-        while True:
-            conn, addr = s.accept()
+    #lanzamos el otro script
+##    os.system(r'py -3.7 "E:\OneDrive - Universidad de Cantabria\Recordar GIST - VARIOS\Aparcamientos\SCRIPTS PARK\rec37.py" {}'.format(port))
+    while True:
+        with closing(socket(AF_INET, SOCK_STREAM)) as s:
+            s.bind((host, port))
+            s.listen(max_queued_connections)
+            conn, addr = s.accept()  # conn es un nuevo socket.
             print('Connected by', addr)
+            # pedimos a la cola el ultimo diccionario y lo serializamos para
+            # enviar
             with candado:
                 enviar = dumps(cola_diccionarios, 1)
             with closing(conn):
@@ -204,43 +201,7 @@ def recibe_datos():
                 conn.recv(tamagno_del_bufer)
                 conn.sendall(b"Fin")
                 print("Cerrando socket.")
-    except:
-        logging.error(traceback.format_exc())
-        s.shutdown()
-        s.close() 
-        raise
-    else:
-        s.shutdown()
-        s.close() 
-
-
-
-    
-##    while True:
-##        p = Popen((ejecutable_python, script_python, next(port)))
-    #lanzamos el otro script
-##    os.system(r'py -3.7 "E:\OneDrive - Universidad de Cantabria\Recordar GIST - VARIOS\Aparcamientos\SCRIPTS PARK\rec37.py" {}'.format(port))
-##    while True:
-##        with closing(socket(AF_INET, SOCK_STREAM)) as s:
-##            s.bind((host, port))
-##            s.listen(max_queued_connections)
-##            conn, addr = s.accept()  # conn es un nuevo socket.
-##            print('Connected by', addr)
-##            # pedimos a la cola el ultimo diccionario y lo serializamos para
-##            # enviar
-##            with candado:
-##                enviar = dumps(cola_diccionarios, 1)
-##            with closing(conn):
-##                orden = conn.recv(tamagno_del_bufer)
-##                if orden == b"g":
-##                    ##                    print("Oido cocina,", addr)
-##                    conn.sendall(enviar)
-##                else:
-##                    conn.sendall("Comando no reconocido.")
-##                conn.recv(tamagno_del_bufer)
-##                conn.sendall(b"Fin")
-##                print("Cerrando socket.")
-##            print("Cerrando servidor.")
+            print("Cerrando servidor.")
 
 #####################################################################
             ## funciones propias ##
@@ -599,7 +560,7 @@ def AAPILoad():
         listener = Listener(address)
         conn = listener.accept()
     except BaseException:
-        logging.error(ack.print_exc())
+        logging.error(traceback.print_exc())
     return 0
 
 
