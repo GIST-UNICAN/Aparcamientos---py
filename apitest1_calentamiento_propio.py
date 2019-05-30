@@ -185,10 +185,12 @@ def recibe_datos():
         except socket_error:
             continue
         else:
+            logging.error("Puerto: {}".format(port))
             break
     try:
         s.listen(max_queued_connections)
-        p = Popen((ejecutable_python, script_python, next(port)))
+        logging.error("Llego aquiii")
+        Popen((ejecutable_python, script_python, str(port)))
         while True:
             conn, addr = s.accept()
             print('Connected by', addr)
@@ -206,11 +208,11 @@ def recibe_datos():
                 print("Cerrando socket.")
     except:
         logging.error(traceback.format_exc())
-        s.shutdown()
+##        s.shutdown()
         s.close() 
         raise
     else:
-        s.shutdown()
+##        s.shutdown()
         s.close() 
 
 
@@ -744,9 +746,11 @@ def AAPIPostManage(time, timeSta, timTrans, SimStep):
 
 def AAPIFinish():
     logging.error('fin')
+    mascara = df_exportar['Hora aparcamiento'].notnull()
+    df_enviar = df_exportar[mascara]
     fecha_hora_txt = datetime.now().strftime(r'\%Y-%m-%d__%H_%M_%S_')
 # df_exportar.to_csv(path_or_buf=ruta_excel_exportar+fecha_hora_txt+r"informe.csv")
-    df_exportar.to_excel(
+    df_enviar.to_excel(
         ruta_excel_exportar +
         fecha_hora_txt +
         r"informe.xlsx",
@@ -841,8 +845,10 @@ def AAPIExitVehicle(idveh, idsection):
         lista_buscando_sitio.remove(idveh)
     # si el vehiculo esta controlado, lo sacamos de la lista de control
     if idveh in lista_id_objetivo:
+        mascara = df_exportar['Hora aparcamiento'].notnull()
+        df_enviar = df_exportar[mascara]
         with candado:
-            cola_diccionarios = df_exportar.to_json()
+            cola_diccionarios = df_enviar.to_json()
         df_exportar.loc[idveh, 'track'].append((idsection,99999999999999,'sale'))
         lista_id_objetivo.remove(idveh)
     else:
@@ -855,6 +861,7 @@ def AAPIEnterVehicleSection(idveh, idsection, atime):
     try:
         #guardamos las seciones por las que va pasando el vehiculo en su busqueda de de sitio            
         if idveh in lista_id_objetivo:
+            df_exportar.loc[idveh, 'track_secciones'][-1].append(idsection)
             df_exportar.loc[idveh, 'track'].append((idsection,atime,'paso'))
             if idsection in secciones_park and idsection != secciones_destino_vehiculo[
                 idveh] and plazas_park_free[idsection] > 0:
@@ -881,10 +888,8 @@ def AAPIEnterVehicleSection(idveh, idsection, atime):
                     AKIVehTrackedSetStaticInf(idveh, info_estatica_vehiculo)
                     secciones_destino_vehiculo[idveh] = int(seccion_aparcamiento)
                     df_exportar.loc[idveh, 'track'].append((idsection,atime,'seccion_recalculada'))
-                    df_exportar.loc[idveh, 'track_secciones'].append([])
-            else:
-                df_exportar.loc[idveh, 'track_secciones'][-1].append(idsection)
-
+##                    df_exportar.loc[idveh, 'track_secciones'].append([])
+            
     except BaseException:
         logging.error(traceback.format_exc())
     return 0
