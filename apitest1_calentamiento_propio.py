@@ -4,6 +4,7 @@ from __future__ import division
 from AAPI import *
 import random
 import ctypes
+import math
 import logging
 import traceback
 import pandas as pd
@@ -39,9 +40,9 @@ from subprocess import Popen
 ## todo ##
 #####################################################################
 
-# incluir función eleccion
+# incluir funciï¿½n eleccion
 # optimizar variable coches aparcados
-# retenci´on salida vehiculos
+# retenciï¿½on salida vehiculos
 # terminar funcion timepo de busqueda
 # parametrizar v peaton
 
@@ -136,11 +137,11 @@ df_exportar = pd.DataFrame(columns=columnas_exportar, index=indice_exportar)
 
 
 # VARIABLES MODELO
-tiempo_parada_aparcamiento = 30  # en segundos
+tiempo_parada_aparcamiento = 22  # en segundos
 # tiempo mÃ­mino que un coche puede estar en una plaza
 tiempo_coche_aparcado_min = 5 * 60
 # tiempo mÃ¡ximo que un coche puede estar en una plaza
-tiempo_coche_aparcado_max = 120 * 60
+tiempo_coche_aparcado_max = 120 * 60 #segundos
 duracion_aparcamiento_min = 10 * 60
 tiempo_aparcamiento_avg = tiempo_coche_aparcado_min * \
     0.5 + tiempo_coche_aparcado_max * 0.5
@@ -151,10 +152,15 @@ tiempo_busqueda_min = 1 * 60
 tiempos_busqueda_desviacion = 120
 tiempos_busqueda_medio = 240
 tiempo_acceso_destino = 120
-tarifa_superficie_max = 2
+rangos_tarifa_superficie = (1,2,3)
+rangos_ocupa_superficie = (60,80,100)
 tarifa_subterraneo = 2.5
 utilidad_relativa_alternativas = 90
 transito = 0
+tiempo_busqueda_min = 2 
+media_tiempo_busqueda = 6.58
+std_tiempo_busqueda = 4.87
+tiempo_busqueda_subterraneo= 1.54
 
 
 plazas_park_total = dict()
@@ -370,7 +376,11 @@ def genera_tiempo_aparcamiento_inical():
 
 
 def _genera_tiempo_busqueda():
-    return 2
+    return max(
+        tiempo_busqueda_min,
+        random.gauss(
+            media_tiempo_busqueda,
+            std_tiempo_busqueda)) 
 
 
 def genera_tiempo_acceso(seccion_inicio, seccion_fin):
@@ -395,7 +405,7 @@ def genera_seccion_destino():
 
 def _calcula_tarifa(ocupacion=None):
     if ocupacion is not None:
-        return ocupacion * tarifa_superficie_max
+        return ocupacion * rangos_tarifa_superficie
     else:
         return tarifa_subterraneo
 
@@ -411,22 +421,36 @@ def _calcula_ocupacion(fila):
         return np.nan
 
 
-def _calcula_utilidad(
+def _calcula_utilidad_calles(
         fila,
         tiempo_busqueda,
-        tbl_street=-0.056,
-        tad_street=-0.057,
-        tar_street=-0.030,
-        tmax_street=0.028,
-        cte_street=-0.884,
-        tad_park=-0.057,
-        tar_park=-0.030,
-        cte_park=-1.026):
-    if fila.secciones in secciones_parking_subterraneo:
-        return tad_park * fila.tiempos + tar_park * _calcula_tarifa() + cte_park
-    elif fila.secciones in secciones_park:
-        return tbl_street * tiempo_busqueda + tad_street * fila.tiempos + tar_street * \
-            _calcula_tarifa(fila.ocupacion) + tmax_street * tiempo_coche_aparcado_max / 3600 + cte_street
+        tiempo_destino=0,
+        nodo_logit=1, #como es un logit jerarquico si el nodo es 0 necesitamos las utilidades de los bloques para e
+        u_para_sumatorio=[],
+        seccion_interes=0,
+        tar_bl=-0.9506,
+        td_bl=-0.0776,
+        tb_bl=-0.0726,
+        tmax_bl=0.5288,
+        cte_sub=2.5982,
+        tar_sub=-0.9506,
+        td_sub=-0.0776,
+        tb_sub=-0.0726,
+        cte_street=0.6813,
+        cte_bl=1.4577):
+    if nodo_logit ==0:
+        if seccion_interes in secciones_parking_subterraneo:
+            return  cte_sub + td_sub * tiempo_destino + tar_sub * _calcula_tarifa() + tb_sub * tiempo_busqueda_subterraneo
+        else:
+            return  cte_street * math.log (sum(math.exp(cte_bl*x) for x in u_para_sumatorio))
+    elif nodo_logit ==1:
+        if fila.secciones in secciones_parking_subterraneo:
+            return np.nan
+        elif fila.secciones in secciones_park:
+            return tb_bl * tiempo_busqueda + td_bl * fila.tiempos + tar_bl * \
+            _calcula_tarifa(fila.ocupacion) + tmax_bl * tiempo_coche_aparcado_max / 3600  #horas
+        else:
+            return np.nan
     else:
         return np.nan
 
@@ -435,7 +459,7 @@ def genera_seccion_aparcamiento(seccion_destino, idveh,
                                 genera_tiempo_busqueda=_genera_tiempo_busqueda,
                                 calcula_ocupacion=_calcula_ocupacion,
                                 Timer=Timer,
-                                calcula_utilidad=_calcula_utilidad,
+                                calcula_utilidad=_calcula_utilidad_calles,
                                 imprime_texto=imprime_texto,
                                 tiempo_busqueda_transcurrido=0,
                                 seccion_origen=None):
@@ -452,38 +476,77 @@ def genera_seccion_aparcamiento(seccion_destino, idveh,
                                                   'T busqueda inicial'] + tiempo_busqueda_transcurrido
                 df_exportar.loc[idveh,
                                 'T busqueda real'] = float(tiempo_busqueda)
-            calcula_utilidad_con_t_fijo = partial(
-                calcula_utilidad, tiempo_busqueda=tiempo_busqueda)
+            calcula_utilidad_con_t_fijo_calle = partial(
+                calcula_utilidad, tiempo_busqueda=tiempo_busqueda, nodo_logit=1)
             # hay que calcular las utilidades para todas las secciones y coger la mejor
             # para ello hay que calcular las utilidades de las secciones que tienen plazas de aparcamiento
             # por otro lado hay que calcular la que tiene parking
             # hay que aÃ±adir usuarios con info perfecta y usuarios con info historica
             # creamos un df para hacer los calculos
-            df_calculos = pd.DataFrame()
-    ##        filtro_seccion_destino = (df_distancias['ORIGEN']==seccion_destino) & (~ (df_distancias['DESTINO'].isin(df_exportar.loc[idveh, 'Secciones intento aparcamiento'])))
+            def genera_dataframe_calculos(seccion_destino,filtro=None, comparativa=None):
+                df_calculos = pd.DataFrame()
+        ##        filtro_seccion_destino = (df_distancias['ORIGEN']==seccion_destino) & (~ (df_distancias['DESTINO'].isin(df_exportar.loc[idveh, 'Secciones intento aparcamiento'])))
+                try:
+                    if not filtro: # si no se define un filtro previamente se hace uno que elimina parking y las secciones donde ya ha intentado aparcar
+                        filtro = ((df_distancias['ORIGEN'] == seccion_destino) & 
+                                                        (~ (df_distancias['DESTINO'].isin(df_exportar.loc[idveh, 'Secciones intento aparcamiento']))) &
+                                                        (~ (df_distancias['DESTINO'].isin(secciones_parking_subterraneo))))
+                except ValueError:
+                    AKIPrintString(str('Pasa por filtro 2'))
+                df_calculos['secciones'] = df_distancias[filtro]['DESTINO']
+                # velocidad peaton
+                df_calculos['tiempos'] = df_distancias[filtro]['TIEMPO']
+                df_calculos['ocupacion'] = df_calculos.apply(
+                    calcula_ocupacion, axis=1)
+                df_calculos['utilidad_calles'] = df_calculos.apply(
+                    calcula_utilidad_con_t_fijo_calle, axis=1)
+                if not comparativa:
+                    utilidad_parking=[]
+                    for x in secciones_parking_subterraneo:
+                        filtro=((df_distancias['ORIGEN'] == seccion_destino) & (df_distancias['DESTINO'] == x))
+                        tiempo_destino = df_distancias[filtro]['TIEMPO'].values[0]
+                        utilidad_parking.append((x, _calcula_utilidad_calles(None,tiempo_busqueda_subterraneo,
+                                                                    tiempo_destino=tiempo_destino, 
+                                                                    nodo_logit=0,
+                                                                    seccion_interes=x ))) 
+                    #AKIPrintString(str(utilidad_parking))
+                    max_u= max(x[1] for x in utilidad_parking) 
+                    seccion_park=  next(x for x in utilidad_parking if x[1]==max_u)[0]                    
+                    utilidad_calle= _calcula_utilidad_calles(None,tiempo_busqueda=tiempo_busqueda, 
+                                                                    nodo_logit=0,
+                                                                    u_para_sumatorio=df_calculos[df_calculos['utilidad_calles'].notna()]['utilidad_calles'].tolist())
+                    return (df_calculos,(max_u,seccion_park),utilidad_calle)
+                else:
+                    return (df_calculos,None,None)
             if seccion_origen:
                 seccion_original_aparcamiento = df_exportar.loc[idveh,
                                                                 'Secciones intento aparcamiento'][-1]
-                filtro_seccion_destino = (
+                
+                # filtramos para coger solamente las secciones de origen y destino
+                filtro_seccion_destino_comparativa_unitaria = (
                     (df_distancias['ORIGEN'] == seccion_destino) & (
                         df_distancias['DESTINO'].isin(
-                            (seccion_origen, seccion_original_aparcamiento))))
-            else:
-                filtro_seccion_destino = ((df_distancias['ORIGEN'] == seccion_destino) & (
-                    ~ (df_distancias['DESTINO'].isin(df_exportar.loc[idveh, 'Secciones intento aparcamiento']))))
-
-            df_calculos['secciones'] = df_distancias[filtro_seccion_destino]['DESTINO']
-            # velocidad peaton
-            df_calculos['tiempos'] = df_distancias[filtro_seccion_destino]['TIEMPO']
-            df_calculos['ocupacion'] = df_calculos.apply(
-                calcula_ocupacion, axis=1)
-            df_calculos['utilidad'] = df_calculos.apply(
-                calcula_utilidad_con_t_fijo, axis=1)
-            if seccion_origen:
-                utilidad_primaria = df_calculos[df_calculos['secciones']
-                                                == seccion_original_aparcamiento]['utilidad'].iloc[0]
-                utilidad_calle_actual = df_calculos[df_calculos['secciones']
-                                                    == seccion_origen]['utilidad'].iloc[0]
+                            (seccion_origen, seccion_original_aparcamiento))) &
+                                            (~ (df_distancias['DESTINO'].isin(secciones_parking_subterraneo))))
+                # generamos las utilidades relativas, pero tenemos que tener en cuenta que la secciÃ³n original no sea un parking porque en ese caso hay que recalcular todas
+                if seccion_original_aparcamiento not in secciones_parking_subterraneo and seccion_origen not in secciones_parking_subterraneo:
+                    #AKIPrintString('1')
+                    df_calculos=genera_dataframe_calculos(seccion_destino,filtro=filtro_seccion_destino_comparativa_unitaria, comparativa=True)[0]
+                    utilidad_primaria = df_calculos[df_calculos['secciones']
+                                                == seccion_original_aparcamiento]['utilidad_calles'].iloc[0]
+                    utilidad_calle_actual = df_calculos[df_calculos['secciones']
+                                                    == seccion_origen]['utilidad_calles'].iloc[0]
+                    #AKIPrintString('actual: '+str(utilidad_calle_actual)+'original '+str(utilidad_primaria))
+                elif seccion_original_aparcamiento in secciones_parking_subterraneo:
+                    #AKIPrintString('2')
+                    df_calculos,utilidad_parking,utilidad_calle=genera_dataframe_calculos(seccion_destino)
+                    utilidad_primaria=utilidad_parking[0]
+                    utilidad_calle_actual=utilidad_calle
+                elif seccion_origen in secciones_parking_subterraneo:
+                    #AKIPrintString('3')
+                    df_calculos,utilidad_parking,utilidad_calle=genera_dataframe_calculos(seccion_destino)
+                    utilidad_primaria=utilidad_calle
+                    utilidad_calle_actual=utilidad_parking[0]
                 u_relativa = 100 - 100 * \
                     abs((abs(utilidad_calle_actual) - abs(utilidad_primaria)) / abs(utilidad_primaria))
 ##                logging.error('Utilidad relativa: '+str(u_relativa))
@@ -497,24 +560,31 @@ def genera_seccion_aparcamiento(seccion_destino, idveh,
                     df_exportar.loc[idveh, 'Utilidad relativa'] = (
                         utilidad_primaria, utilidad_calle_actual, u_relativa)
                     # No tiene en cuenta pasar por delante de un parking
-                    df_exportar.loc[idveh, 'Utilidades iteraciones'].append({'cambio': True, 'utilidades': {x:y for x, y in zip(df_calculos['secciones'].apply(int),df_calculos['utilidad'])}})
+                    df_exportar.loc[idveh, 'Utilidades iteraciones'].append({'cambio': True, 'utilidades': {x:y for x, y in zip(df_calculos['secciones'].apply(int),df_calculos['utilidad_calles'])}})
                     return (seccion_origen, False, distancia_max_utilidad)
                 else:
                     return (None, None, None)
-
             else:
-                indice_fila_maxima_utilidad = df_calculos["utilidad"].idxmax()
-                imprime_texto(str(indice_fila_maxima_utilidad))
-                fila_maxima_utilidad = df_calculos.loc[indice_fila_maxima_utilidad]
-                seccion_maxima_utilidad = fila_maxima_utilidad["secciones"]
-                distancia_max_utilidad = fila_maxima_utilidad["tiempos"] * 5000 / 60
-                ocupacion_maxima_utilidad = fila_maxima_utilidad["ocupacion"]
+                df_calculos,utilidad_parking,utilidad_calle=genera_dataframe_calculos(seccion_destino)
+                AKIPrintString('parking '+str(utilidad_parking[0]) +'calle '+str(utilidad_calle))
+                if utilidad_calle>utilidad_parking[0]:
+                    indice_fila_maxima_utilidad = df_calculos["utilidad_calles"].idxmax()
+                    imprime_texto(str(indice_fila_maxima_utilidad))
+                    fila_maxima_utilidad = df_calculos.loc[indice_fila_maxima_utilidad]
+                    seccion_maxima_utilidad = fila_maxima_utilidad["secciones"]
+                    distancia_max_utilidad = fila_maxima_utilidad["tiempos"] * 5000 / 60
+                    ocupacion_maxima_utilidad = fila_maxima_utilidad["ocupacion"]
+                else:
+                    seccion_maxima_utilidad = utilidad_parking[1]
+                    filtro=((df_distancias['ORIGEN'] == seccion_destino) & (df_distancias['DESTINO'] == seccion_maxima_utilidad))
+                    distancia_max_utilidad = df_distancias[filtro]['TIEMPO'].values[0] * 5000 / 60
+                    ocupacion_maxima_utilidad = None
 ##                logging.error(' quiere llegar a  : '+str(seccion_destino))
 ##                logging.error(' va a: '+str(seccion_maxima_utilidad))
-                seccion_subterranea = True if fila_maxima_utilidad.secciones in secciones_parking_subterraneo else False
+                seccion_subterranea = True if seccion_maxima_utilidad in secciones_parking_subterraneo else False
                 df_exportar.loc[idveh, 'Tarifa'].append(
                     _calcula_tarifa(ocupacion_maxima_utilidad))
-                df_exportar.loc[idveh, 'Utilidades iteraciones'].append({'cambio': False, 'utilidades': {x:y for x, y in zip(df_calculos['secciones'],df_calculos['utilidad'])}})
+                df_exportar.loc[idveh, 'Utilidades iteraciones'].append({'cambio': False, 'utilidades': {x:y for x, y in zip(df_calculos['secciones'],df_calculos['utilidad_calles'])}})
 
                 return (
                     seccion_maxima_utilidad,
@@ -538,29 +608,31 @@ def AAPILoad():
 
 
 # imprime_texto(1)
-    global utilidad_relativa_alternativas, ruta_excel_exportar, tarifa_subterraneo, tarifa_superficie_max, tiempos_busqueda_medio, tiempos_busqueda_desviacion, tiempo_busqueda_min, tiempo_aparcamiento_avg, tiempo_parada_aparcamiento, tiempo_coche_aparcado_min, tiempo_coche_aparcado_max, ocupacion_inicial
+    global utilidad_relativa_alternativas, ruta_excel_exportar, tarifa_subterraneo, rangos_tarifa_superficie,rangos_ocupa_superficie, tiempos_busqueda_medio, tiempos_busqueda_desviacion, tiempo_busqueda_min, tiempo_aparcamiento_avg, tiempo_parada_aparcamiento, tiempo_coche_aparcado_min, tiempo_coche_aparcado_max, ocupacion_inicial
 
 ##    logging.error("Executable: "+str(sys.executable))
-    # configurar parámetros
+    # configurar parï¿½metros
     from easygui import multenterbox, diropenbox
-    msg = "Parámetros del modelo"
+    msg = "Parametros del modelo"
     title = "Aimsum Park Gist"
     fieldNames = [
         "Tiempo parada aparcamientos (seg)",
-        "Tiempo mínimo aparcamiento (seg)",
-        "Tiempo máximo aparcamiento (seg)",
+        "Tiempo minimo aparcamiento (seg)",
+        "Tiempo maximo aparcamiento (seg)",
         "Ocupacion inicial (%)",
-        "Tarifa max OLA (eur/h)",
+        "Rangos tarifa on-street *tupla (eur/h)",
+        "Rangos ocup on-street *tupla (%)",
         "Tarifa parking (eur/h)",
         "Tiempo busqueda medio (seg)",
         "Tiempo busqueda desviacion (seg)",
-        "Utilidad máxima relativa (%)"]
+        "Utilidad maxima relativa (%)"]
     valores_por_defecto = [
         tiempo_parada_aparcamiento,
         tiempo_coche_aparcado_min,
         tiempo_coche_aparcado_max,
         ocupacion_inicial,
-        tarifa_superficie_max,
+        rangos_tarifa_superficie,
+        rangos_ocupa_superficie,
         tarifa_subterraneo,
         tiempos_busqueda_medio,
         tiempos_busqueda_desviacion,
@@ -582,17 +654,17 @@ def AAPILoad():
     ruta_excel_exportar = diropenbox(
         msg='indica la ruta de guardado de los informes',
         title=title,
-        default=r"C:\Users\Andrés\Desktop\informes")
+        default=r"C:\Users\AndrÃ©s\Desktop\informes")
     logging.error(ruta_excel_exportar)
     (tiempo_parada_aparcamiento,
      tiempo_coche_aparcado_min,
      tiempo_coche_aparcado_max,
      ocupacion_inicial,
-     tarifa_superficie_max,
      tarifa_subterraneo,
      tiempos_busqueda_medio,
      tiempos_busqueda_desviacion,
      utilidad_relativa_alternativas) = (float(x) for x in fieldValues)
+     (rangos_tarifa_superficie,rangos_ocupa_superficie) = (tuple(x) for x in fieldValues)
     tiempo_aparcamiento_avg = tiempo_coche_aparcado_min * \
         0.5 + tiempo_coche_aparcado_max * 0.5
     # vamos a po
@@ -609,7 +681,7 @@ def AAPIInit():
     # imprime_texto(2)
     global lista_secciones_con_comercios, lista_probabilidades, df_distancias
     AKIPrintString("init")
-    # Ëcargamos el excel de las distancias
+    # ï¿½cargamos el excel de las distancias
     df_distancias = pd.read_excel(ruta_excel_distancias, header=0)
     # cargamos el excel de las plazas y el ded los comercios
     df = pd.read_excel(ruta_excel, header=0)
@@ -624,7 +696,7 @@ def AAPIInit():
     lista_secciones_con_comercios = dict_plazas_seccion_list['seccion']
     lista_probabilidades = dict_plazas_seccion_list['prob_park']
     # vamos a relaccionar centroides y secciones que les vierten
-    # creamos aquí una lista de secciones mas correcta
+    # creamos aquï¿½ una lista de secciones mas correcta
     global secciones_park, plazas_park_total, plazas_park_free, plazas_park_full, dict_secciones_centroide
     for centroide in centroides_objetivo:
         lista_add = list()
@@ -666,7 +738,7 @@ def AAPIManage(time, timeSta, timTrans, SimStep):
     # imprime_texto(3)
     try:
         ##    AKIPrintString("time: {}".format(str(time)))
-        # extraemos en la primera ejecución la losgitud de los tramos de control
+        # extraemos en la primera ejecuciï¿½n la losgitud de los tramos de control
         # para sacar a los coches justo en la mitad
         global ejecutar_1_vez
         if ejecutar_1_vez:
@@ -682,7 +754,7 @@ def AAPIManage(time, timeSta, timTrans, SimStep):
         if time % 1 == 0:
             desaparca_coche(time)
 
-        # se recorre la lista de vehículos que tienene intención de apracar
+        # se recorre la lista de vehï¿½culos que tienene intenciï¿½n de apracar
         for vehiculo in lista_id_objetivo:
             if pd.isna(df_exportar.loc[vehiculo, 'Hora Entrada']):
                 df_exportar.loc[vehiculo, 'Hora Entrada'] = time
@@ -711,10 +783,10 @@ def AAPIManage(time, timeSta, timTrans, SimStep):
                         ##                        AKIPrintString("aparcando el vehiculo que buscaba: "+ str(vehiculo))
                         lista_buscando_sitio.remove(vehiculo)
                     AKIVehTrackedModifySpeed(vehiculo, 0.0)
-                    # actualizamos el gráfico y quitamos la plaza de la sección
+                    # actualizamos el grï¿½fico y quitamos la plaza de la secciï¿½n
                     # como no disponible
                     actualiza_grafico(seccion_vehiculo, vehiculo)
-                    # añadir el vehiculo a la lista de aparcados
+                    # aï¿½adir el vehiculo a la lista de aparcados
                     tiempo_aparcamiento = genera_tiempo_aparcamiento()
                     time_salida = float(time) + tiempo_aparcamiento
                     df_exportar.loc[vehiculo,
@@ -806,7 +878,7 @@ def AAPIEnterVehicle(idveh, idsection):
 ##            imprime_texto("centroide_ dest: ", str(centroide_aparcamiento))
             info_estatica_vehiculo.__setattr__(
                 "centroidDest", int(centroide_aparcamiento))
-            # añadimos la id a una lista para saber cuales estamos trackeando
+            # aï¿½adimos la id a una lista para saber cuales estamos trackeando
 ##            AKIPrintString("Siguiendo al vehiculo {}".format(str(idveh)))
             lista_id_objetivo.append(idveh)
             # guardamos la seccion de destino
