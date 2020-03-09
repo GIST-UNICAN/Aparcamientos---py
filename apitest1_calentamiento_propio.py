@@ -23,6 +23,7 @@ from socket import socket, AF_INET, SOCK_STREAM, error as socket_error
 from contextlib import closing
 from marshal import dumps
 import Queue
+from bisect import bisect_left
 logging.basicConfig(level=logging.DEBUG)
 import os
 from subprocess import Popen
@@ -152,8 +153,8 @@ tiempo_busqueda_min = 1 * 60
 tiempos_busqueda_desviacion = 120
 tiempos_busqueda_medio = 240
 tiempo_acceso_destino = 120
-rangos_tarifa_superficie = (1,2,3)
-rangos_ocupa_superficie = (60,80,100)
+rangos_tarifa_superficie = '1,2,3'
+rangos_ocupa_superficie = '60,80,100'
 tarifa_subterraneo = 2.5
 utilidad_relativa_alternativas = 90
 transito = 0
@@ -405,7 +406,8 @@ def genera_seccion_destino():
 
 def _calcula_tarifa(ocupacion=None):
     if ocupacion is not None:
-        return ocupacion * rangos_tarifa_superficie
+        # AKIPrintString('precio '+str(rangos_tarifa_superficie[bisect_left(rangos_ocupa_superficie, 100*ocupacion)]))
+        return rangos_tarifa_superficie[bisect_left(rangos_ocupa_superficie, 100*ocupacion)]
     else:
         return tarifa_subterraneo
 
@@ -447,8 +449,7 @@ def _calcula_utilidad_calles(
         if fila.secciones in secciones_parking_subterraneo:
             return np.nan
         elif fila.secciones in secciones_park:
-            return tb_bl * tiempo_busqueda + td_bl * fila.tiempos + tar_bl * \
-            _calcula_tarifa(fila.ocupacion) + tmax_bl * tiempo_coche_aparcado_max / 3600  #horas
+            return tb_bl * tiempo_busqueda + td_bl * fila.tiempos + tar_bl * _calcula_tarifa() + tmax_bl * tiempo_coche_aparcado_max / 3600  #horas
         else:
             return np.nan
     else:
@@ -491,8 +492,9 @@ def genera_seccion_aparcamiento(seccion_destino, idveh,
                         filtro = ((df_distancias['ORIGEN'] == seccion_destino) & 
                                                         (~ (df_distancias['DESTINO'].isin(df_exportar.loc[idveh, 'Secciones intento aparcamiento']))) &
                                                         (~ (df_distancias['DESTINO'].isin(secciones_parking_subterraneo))))
-                except ValueError:
-                    AKIPrintString(str('Pasa por filtro 2'))
+                except ValueError: #EL FILTRO VIENE DEFINIDO CON LA FUNCION
+                    pass 
+                    #AKIPrintString(str('Pasa por filtro 2'))
                 df_calculos['secciones'] = df_distancias[filtro]['DESTINO']
                 # velocidad peaton
                 df_calculos['tiempos'] = df_distancias[filtro]['TIEMPO']
@@ -626,45 +628,60 @@ def AAPILoad():
         "Tiempo busqueda medio (seg)",
         "Tiempo busqueda desviacion (seg)",
         "Utilidad maxima relativa (%)"]
-    valores_por_defecto = [
-        tiempo_parada_aparcamiento,
-        tiempo_coche_aparcado_min,
-        tiempo_coche_aparcado_max,
-        ocupacion_inicial,
-        rangos_tarifa_superficie,
-        rangos_ocupa_superficie,
-        tarifa_subterraneo,
-        tiempos_busqueda_medio,
-        tiempos_busqueda_desviacion,
-        utilidad_relativa_alternativas]
-    fieldValues = multenterbox(msg, title, fieldNames, valores_por_defecto)
-    if fieldValues is None:
-        sys.exit(0)
-    # make sure that none of the fields were left blank
-    while True:
-        errmsg = ""
-        for i, name in enumerate(fieldNames):
-            if fieldValues[i].strip() == "":
-                errmsg += "{} Es un campo requerido.\n\n".format(name)
-        if errmsg == "":
-            break  # no problems found
-        fieldValues = multenterbox(errmsg, title, fieldNames, fieldValues)
+    def genera_tupla(string):
+        lista=string.split(',')
+        return tuple(map(float,lista))
+    try:
+        valores_por_defecto = [ # tipo 0 float tipo 1 # tupla
+            (tiempo_parada_aparcamiento,float),
+            (tiempo_coche_aparcado_min,float),
+            (tiempo_coche_aparcado_max,float),
+            (ocupacion_inicial,float),
+            (rangos_tarifa_superficie,genera_tupla),
+            (rangos_ocupa_superficie,genera_tupla),
+            (tarifa_subterraneo,float),
+            (tiempos_busqueda_medio,float),
+            (tiempos_busqueda_desviacion,float),
+            (utilidad_relativa_alternativas,float)]
+        valores_por_defecto_nombres = [
+            'tiempo_parada_aparcamiento',
+            'tiempo_coche_aparcado_min',
+            'tiempo_coche_aparcado_max',
+            'ocupacion_inicial',
+            'rangos_tarifa_superficie',
+            'rangos_ocupa_superficie',
+            'tarifa_subterraneo',
+            'tiempos_busqueda_medio',
+            'tiempos_busqueda_desviacion',
+            'utilidad_relativa_alternativas']
+        #tipos = nth(zip(*valores_por_defecto), 1)
+        fieldValues = multenterbox(msg, title, fieldNames, [x[0] for x in valores_por_defecto])
         if fieldValues is None:
-            break
-    ruta_excel_exportar = diropenbox(
-        msg='indica la ruta de guardado de los informes',
-        title=title,
-        default=r"C:\Users\Andrés\Desktop\informes")
-    logging.error(ruta_excel_exportar)
-    (tiempo_parada_aparcamiento,
-     tiempo_coche_aparcado_min,
-     tiempo_coche_aparcado_max,
-     ocupacion_inicial,
-     tarifa_subterraneo,
-     tiempos_busqueda_medio,
-     tiempos_busqueda_desviacion,
-     utilidad_relativa_alternativas) = (float(x) for x in fieldValues)
-     (rangos_tarifa_superficie,rangos_ocupa_superficie) = (tuple(x) for x in fieldValues)
+            sys.exit(0)
+        # make sure that none of the fields were left blank
+        while True:
+            errmsg = ""
+            for i, name in enumerate(fieldNames):
+                if fieldValues[i].strip() == "":
+                    errmsg += "{} Es un campo requerido.\n\n".format(name)
+            if errmsg == "":
+                break  # no problems found
+            fieldValues = multenterbox(errmsg, title, fieldNames, fieldValues)
+            if fieldValues is None:
+                break
+        ruta_excel_exportar = diropenbox(
+            msg='indica la ruta de guardado de los informes',
+            title=title,
+            default=r"C:\Users\Andrés\Desktop\informes")
+        logging.error(ruta_excel_exportar)
+        for indice, valor  in enumerate(fieldValues):
+            variable=valores_por_defecto_nombres[indice]
+            funcion=valores_por_defecto[indice][1]
+            valor=funcion(valor)
+            exec('{}={}'.format(variable,valor),globals(), locals())
+            AKIPrintString(str('{}={}'.format(variable,valor)))
+    except:
+        logging.error(traceback.format_exc())
     tiempo_aparcamiento_avg = tiempo_coche_aparcado_min * \
         0.5 + tiempo_coche_aparcado_max * 0.5
     # vamos a po
@@ -673,7 +690,8 @@ def AAPILoad():
         listener = Listener(address)
         conn = listener.accept()
     except BaseException:
-        logging.error(ack.print_exc())
+        logging.error(traceback.format_exc())
+
     return 0
 
 
