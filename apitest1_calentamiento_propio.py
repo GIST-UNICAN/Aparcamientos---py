@@ -1,7 +1,12 @@
 # -*- coding: cp1252 -*-
 from __future__ import print_function
 from __future__ import division
+import sys
+sys.path.insert(1, 'C:\Program Files\Aimsun\Aimsun Next 8.3\programming\Aimsun Next API\AAPIPython\Micro')
 from AAPI import *
+SITEPACKAGES = "C:\\Python27\\lib\\site-packages"
+if SITEPACKAGES not in sys.path:
+	sys.path.append(SITEPACKAGES)
 import random
 import ctypes
 import math
@@ -29,14 +34,12 @@ import os
 from subprocess import Popen
 from collections import defaultdict
 
-
 ##    logging.error('no hay socket')
 
 
-# pip.main(['install','dill'])
+#pip.main(['install','pandas'])
 
-##logging.basicConfig(filename='apitest1.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
-
+logging.error('No pasa')
 
 #####################################################################
 ## todo ##
@@ -54,8 +57,8 @@ from collections import defaultdict
 
 
 # GEOMETRIA APARCAMIENTOS
-ruta_excel = r"E:\Program Files\Aimsun\Aimsun Next 8.3\programming\Aimsun Next API\AAPIPython\Micro\plazas_seccion.xlsx"
-ruta_excel_distancias = r"E:\Program Files\Aimsun\Aimsun Next 8.3\programming\Aimsun Next API\AAPIPython\Micro\distancias.xls"
+ruta_excel = r"C:\Users\Tablet\Documents\GitHub\Aparcamientos---py\plazas_seccion.xlsx"
+ruta_excel_distancias = r"C:\Users\Tablet\Documents\GitHub\Aparcamientos---py\distancias.xls"
 centroides_objetivo = (
     34894,
     34892,
@@ -194,8 +197,8 @@ def recibe_datos():
     host = ''                 # Symbolic name meaning all available interfaces
     puerto_inicial = 50000
     cuenta_ports = count(50000)
-    ejecutable_python = "C:\\Anaconda3\\python.exe"
-    script_python = "E:\\OneDrive - Universidad de Cantabria\\Recordar GIST - VARIOS\\Aparcamientos\\SCRIPTS PARK\\rec37.py"
+    ejecutable_python = 'C:\\Users\\Tablet\\AppData\\Local\\Programs\\Python\\Python38\\python.exe'
+    script_python = "C:\\Users\\Tablet\\Documents\\GitHub\\Aparcamientos-visualizacion---py\\rec37.py"
     s = socket(AF_INET, SOCK_STREAM)
     while True:
         port = next(cuenta_ports)
@@ -279,13 +282,13 @@ class Timer:
     def __exit__(self, *args):
         self.end = clock()
         self.interval = self.end - self.start
-        with open(r"E:\Program Files\Aimsun\Aimsun Next 8.3\programming\Aimsun Next API\AAPIPython\Micro\log_time.txt", 'a') as log:
+        with open(r"C:\Users\Tablet\Documents\GitHub\Aparcamientos---py\log_time.txt", 'a') as log:
             print(self.nombre, " tardo ", self.interval, "segundos.", file=log)
 
 
 def imprime_texto(*txt):
     return
-    with open(r"E:\Program Files\Aimsun\Aimsun Next 8.3\programming\Aimsun Next API\AAPIPython\Micro\log.txt", 'a') as log:
+    with open(r"C:\Users\Tablet\Documents\GitHub\Aparcamientos---py\log.txt", 'a') as log:
         print(*txt, file=log)
 
 
@@ -657,7 +660,7 @@ def AAPILoad():
 # imprime_texto(1)
     global porcentaje_informados,tiempo_actualizacion_tarifas, utilidad_relativa_alternativas, ruta_excel_exportar, tarifa_subterraneo, rangos_tarifa_superficie,rangos_ocupa_superficie, tiempos_busqueda_medio, tiempos_busqueda_desviacion, tiempo_busqueda_min, tiempo_aparcamiento_avg, tiempo_parada_aparcamiento, tiempo_coche_aparcado_min, tiempo_coche_aparcado_max, ocupacion_inicial
 
-##    logging.error("Executable: "+str(sys.executable))
+    logging.error("Executable: "+str(sys.executable))
     # configurar par�metros
     from easygui import multenterbox, diropenbox
     msg = "Parametros del modelo"
@@ -752,6 +755,8 @@ def AAPILoad():
 def AAPIInit():
     # imprime_texto(2)
     global lista_secciones_con_comercios, lista_probabilidades, df_distancias
+    ever=sys.executable
+    AKIPrintString(str(ever))
     AKIPrintString("init")
     # �cargamos el excel de las distancias
     df_distancias = pd.read_excel(ruta_excel_distancias, header=0)
@@ -913,7 +918,7 @@ def AAPIFinish():
         fecha_hora_txt +
         r"informe_tarifas.xlsx",
         engine="xlsxwriter")
-    with open(r"E:\OneDrive - Universidad de Cantabria\Recordar GIST - VARIOS\PASAR DE PC\aimsumapis\logaimsun.log", 'w') as file:
+    with open(r"C:\Users\Tablet\Documents\GitHub\Aparcamientos---py\logaimsun.log", 'w') as file:
         file.write(str(lista_info_1))
         file.write("\n")
         file.write(str(lista_info_2))

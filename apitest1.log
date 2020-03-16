@@ -1,0 +1,24 @@
+root - ERROR - error
+root - ERROR - error
+root - ERROR - No pasa
+root - ERROR - No pasa
+root - ERROR - Executable: C:\Program Files\Aimsun\Aimsun Next 8.3\Aimsun Next.exe
+root - ERROR - Traceback (most recent call last):
+  File "C:/Users/Tablet/Documents/GitHub/Aparcamientos---py\apitest1_calentamiento_propio.py", line 715, in AAPILoad
+    fieldValues = multenterbox(msg, title, fieldNames, [x[0] for x in valores_por_defecto])
+  File "C:\Python27\lib\site-packages\easygui\boxes\multi_fillable_box.py", line 133, in multenterbox
+    callback=callback)
+  File "C:\Python27\lib\site-packages\easygui\boxes\multi_fillable_box.py", line 186, in __init__
+    mask_last, self.callback_ui)
+  File "C:\Python27\lib\site-packages\easygui\boxes\multi_fillable_box.py", line 268, in __init__
+    self.boxRoot = tk.Tk()
+  File "C:\Program Files\Aimsun\Aimsun Next 8.3\lib\lib-tk\Tkinter.py", line 1819, in __init__
+    self.tk = _tkinter.create(screenName, baseName, className, interactive, wantobjects, useTk, sync, use)
+TclError: Can't find a usable init.tcl in the following directories: 
+    {C:/Program Files/Aimsun/Aimsun Next 8.3/lib/tcl8.5} {C:/Program Files/Aimsun/lib/tcl8.5} {C:/Program Files/lib/tcl8.5} {C:/Program Files/Aimsun/library} {C:/Program Files/library} {C:/Program Files/tcl8.5.15/library} C:/tcl8.5.15/library
+
+
+
+This probably means that Tcl wasn't installed properly.
+
+
