@@ -287,7 +287,6 @@ class Timer:
 
 
 def imprime_texto(*txt):
-    return
     with open(r"C:\Users\Tablet\Documents\GitHub\Aparcamientos---py\log.txt", 'a') as log:
         print(*txt, file=log)
 
@@ -616,7 +615,7 @@ def genera_seccion_aparcamiento(seccion_destino, idveh,
                     return (None, None, None)
             else:
                 df_calculos,utilidad_parking,utilidad_calle=genera_dataframe_calculos(seccion_destino)
-                AKIPrintString('parking '+str(utilidad_parking[0]) +'calle '+str(utilidad_calle))
+                #AKIPrintString('parking '+str(utilidad_parking[0]) +'calle '+str(utilidad_calle))
                 if utilidad_calle>utilidad_parking[0]:
                     indice_fila_maxima_utilidad = df_calculos["utilidad_calles"].idxmax()
                     imprime_texto(str(indice_fila_maxima_utilidad))
@@ -704,7 +703,7 @@ def AAPILoad():
             'ocupacion_inicial',
             'rangos_tarifa_superficie',
             'rangos_ocupa_superficie',
-            'tarifa_generica_calle'
+            'tarifa_generica_calle',
             'tarifa_subterraneo',
             'tiempos_busqueda_medio',
             'tiempos_busqueda_desviacion',
@@ -820,7 +819,9 @@ def AAPIManage(time, timeSta, timTrans, SimStep):
         global ejecutar_1_vez, tiempo_global, plazas_park_total, plazas_park_free, df_exportar_secciones, precios_parking_street
         tiempo_global=time
         #actulizamos las tarifas si ha lugar
+       
         if tiempo_global % (tiempo_actualizacion_tarifas*60)==0 or ejecutar_1_vez:
+            AKIPrintString("seciones: {}".format(str('ACTUALIZAR PRECIOS')))
             for seccion in secciones_park:
                 if plazas_park_total[seccion]>0:
                     ocup = 1- (plazas_park_free[seccion] / plazas_park_total[seccion])
@@ -942,7 +943,7 @@ def AAPIEnterVehicle(idveh, idsection):
             # hay que aplicar el modelo para saber donde lo mandamos
             seccion_destino = genera_seccion_destino()
             tipo_usuario=selecciona_tipo_usuario()
-            AKIPrintString("tipo: {}".format(str(tipo_usuario)))
+            #AKIPrintString("tipo: {}".format(str(tipo_usuario)))
 ##            imprime_texto("seccion_ dest: ",str(seccion_destino))
             df_exportar.loc[idveh, 'Hora Entrada'] = tiempo_global
             df_exportar.loc[idveh, 'Tipo usuario'] = tipo_usuario
