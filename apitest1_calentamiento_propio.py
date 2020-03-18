@@ -467,6 +467,7 @@ def _calcula_utilidad_calles(
         tar_bl=-0.9506,
         td_bl=-0.0776,
         tb_bl=-0.0726,
+        ocu_bl=0.00707,
         tmax_bl=0.5288,
         cte_sub=2.5982,
         tar_sub=-0.9506,
