@@ -154,14 +154,14 @@ tiempo_coche_aparcado_max = 120 * 60 #segundos
 duracion_aparcamiento_min = 10 * 60
 tiempo_aparcamiento_avg = tiempo_coche_aparcado_min * \
     0.5 + tiempo_coche_aparcado_max * 0.5
-media_duracion_park = 104 * 60
-std_duracion_park = 50 * 60
+media_duracion_park = 30 * 60
+std_duracion_park = 30 * 60
 ocupacion_inicial = 85
 tiempo_busqueda_min = 1 * 60
 tiempos_busqueda_desviacion = 120
 tiempos_busqueda_medio = 240
 tiempo_acceso_destino = 120
-rangos_tarifa_superficie = (1.45,1.45,1.45)
+rangos_tarifa_superficie = (1,2,5)
 tarifa_generica_calle = 1.45
 rangos_ocupa_superficie = (60,80,100)
 tiempo_actualizacion_tarifas=15
@@ -172,7 +172,7 @@ tiempo_busqueda_min = 2
 media_tiempo_busqueda = 6.58
 std_tiempo_busqueda = 4.87
 tiempo_busqueda_subterraneo= 1.54
-porcentaje_informados=0
+porcentaje_informados=50
 porcentaje_no_informados=100-porcentaje_informados
 
 
