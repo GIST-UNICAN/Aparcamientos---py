@@ -75,7 +75,6 @@ centroides_objetivo = (
     34786,
     34788,
     34787,
-    34789,
     34790,
     34792,
     34791,
@@ -117,12 +116,15 @@ lista_secciones_con_comercios = list()
 lista_probabilidades = list()
 tiempo_global=0
 tipos_usuarios=('informado','no_informado')
+tipo_vehiculo=0
 
 
 # Exportacion
 ruta_excel_exportar = ""
 columnas_exportar = ['ID',
                      'Tipo usuario',
+                     'distancia_recorrida',
+                      'consumo_total',
     'Hora Entrada',
     'T busqueda inicial',
     'T busqueda real',
@@ -154,18 +156,18 @@ tiempo_coche_aparcado_max = 120 * 60 #segundos
 duracion_aparcamiento_min = 10 * 60
 tiempo_aparcamiento_avg = tiempo_coche_aparcado_min * \
     0.5 + tiempo_coche_aparcado_max * 0.5
-media_duracion_park = 30 * 60
-std_duracion_park = 30 * 60
-ocupacion_inicial = 85
+media_duracion_park = 60 * 60
+std_duracion_park = 60 * 60
+ocupacion_inicial = 95
 tiempo_busqueda_min = 1 * 60
 tiempos_busqueda_desviacion = 120
 tiempos_busqueda_medio = 240
 tiempo_acceso_destino = 120
-rangos_tarifa_superficie = (1,2,5)
+rangos_tarifa_superficie = (1,2,3.5)
 tarifa_generica_calle = 1.45
 rangos_ocupa_superficie = (60,80,100)
 tiempo_actualizacion_tarifas=15
-tarifa_subterraneo = 2.5
+tarifa_subterraneo = 2.75
 utilidad_relativa_alternativas = 90
 transito = 0
 tiempo_busqueda_min = 2
@@ -180,6 +182,9 @@ plazas_park_total = dict()
 plazas_park_free = dict()
 plazas_park_full = dict()
 precios_parking_street = defaultdict(int)
+
+info=0
+no_info=0
 
 
 #####################################################################
@@ -295,9 +300,15 @@ def seleccionar_vehiculo_rnd():
     numero = int(random.uniform(1, 1))
     return True if numero == 1 else False
 
+
 def selecciona_tipo_usuario():
-    
-    usuario=np.random.choice(tipos_usuarios,p=[porcentaje_informados/100,1-(porcentaje_informados/100)])
+    global info, no_info
+    usuario=np.random.choice(tipos_usuarios, p=((porcentaje_informados/100),1-(porcentaje_informados/100)))
+    if usuario =="informado":
+        info=info+1
+    else:
+        no_info=no_info+1
+    # AKIPrintString("PASA POR ELECCIÓN " + str(usuario)+" info "+str(info)+" no info "+ str(no_info))
     return usuario
 
 
@@ -346,15 +357,16 @@ def actualiza_grafico(
 ##    imprime_texto("actualiza_grafico todo? ", str(actualizar_todo))
     if actualizar_todo:
         # actualizamos el diccionario de plazas disponibles en esa calle
-        plazas_park_free[seccion_vehiculo] = plazas_park_free[seccion_vehiculo] - 1 * signo
-        plazas_park_full[seccion_vehiculo] = plazas_park_full[seccion_vehiculo] + 1 * signo
-        plazas_totales_seccion = plazas_park_free[seccion_vehiculo] + \
-            plazas_park_full[seccion_vehiculo]
-        atr = ANGConnGetAttribute(
-            AKIConvertFromAsciiString("GKSection::ALIAS"))
-        ANGConnSetAttributeValueStringA(
-            atr, seccion_vehiculo, "{} libres de {}".format(
-                plazas_park_free[seccion_vehiculo], plazas_totales_seccion))
+        if seccion_vehiculo not in secciones_parking_subterraneo:
+            plazas_park_free[seccion_vehiculo] = plazas_park_free[seccion_vehiculo] - 1 * signo
+            plazas_park_full[seccion_vehiculo] = plazas_park_full[seccion_vehiculo] + 1 * signo
+            plazas_totales_seccion = plazas_park_free[seccion_vehiculo] + \
+                plazas_park_full[seccion_vehiculo]
+            atr = ANGConnGetAttribute(
+                AKIConvertFromAsciiString("GKSection::ALIAS"))
+            ANGConnSetAttributeValueStringA(
+                atr, seccion_vehiculo, "{} libres de {}".format(
+                    plazas_park_free[seccion_vehiculo], plazas_totales_seccion))
     libres = str(max(0, sum(plazas_park_free.values())))
     aparcados = str(sum(plazas_park_full.values()))
     buscando = str(len(lista_buscando_sitio))
@@ -438,10 +450,13 @@ def genera_seccion_destino():
         p=lista_probabilidades)
 
 
-def _calcula_tarifa(seccion=None, ocupacion=None):
+def _calcula_tarifa(seccion=None, ocupacion=None, idveh=None):
     global tiempo_global, tiempo_actualizacion_tarifas, precios_parking_street
     if ocupacion is not None:
-        return precios_parking_street[seccion]
+        if df_exportar['Tipo usuario'][idveh] == 'informado':
+            return precios_parking_street[seccion]
+        else:
+            return tarifa_generica_calle
     else:
         return tarifa_subterraneo
 
@@ -489,11 +504,13 @@ def _calcula_utilidad_calles(
             return np.nan
         elif fila.secciones in secciones_park:
             if df_exportar['Tipo usuario'][idveh] == 'informado':
+                # AKIPrintString('info: '+str(idveh)+str(df_exportar['Tipo usuario'][idveh]))
                 if plazas_park_free[fila.secciones]:
                     tiempo_busqueda = tiempo_busqueda - df_exportar.loc[idveh, 'T busqueda inicial']
-                tarifa =  _calcula_tarifa(fila.secciones,fila.ocupacion)
+                tarifa =  _calcula_tarifa(fila.secciones,fila.ocupacion,idveh)
             else:
-                 tarifa = tarifa_generica_calle
+                # AKIPrintString('no info: '+str(idveh)+str(df_exportar['Tipo usuario'][idveh]))
+                tarifa = tarifa_generica_calle
             #AKIPrintString('U: '+str(tiempo_busqueda)+'  '+str(fila.tiempos)+'  '+str( _calcula_tarifa(fila.ocupacion))+'  '+str(tiempo_coche_aparcado_max / 3600))
             return tb_bl * tiempo_busqueda + td_bl * fila.tiempos + tar_bl * tarifa + tmax_bl * tiempo_coche_aparcado_max / 3600  #horas
         else:
@@ -606,7 +623,7 @@ def genera_seccion_aparcamiento(seccion_destino, idveh,
                     ocupacion_maxima_utilidad = df_calculos[df_calculos['secciones']
                                                             == seccion_origen]["ocupacion"].iloc[0]
                     df_exportar.loc[idveh, 'Tarifa'].append(
-                        _calcula_tarifa(seccion_origen,ocupacion_maxima_utilidad))
+                        _calcula_tarifa(seccion_origen,ocupacion_maxima_utilidad,idveh))
                     df_exportar.loc[idveh, 'Utilidad relativa'] = (
                         utilidad_primaria, utilidad_calle_actual, u_relativa)
                     # No tiene en cuenta pasar por delante de un parking
@@ -633,7 +650,7 @@ def genera_seccion_aparcamiento(seccion_destino, idveh,
 ##                logging.error(' va a: '+str(seccion_maxima_utilidad))
                 seccion_subterranea = True if seccion_maxima_utilidad in secciones_parking_subterraneo else False
                 df_exportar.loc[idveh, 'Tarifa'].append(
-                    _calcula_tarifa(seccion_maxima_utilidad,ocupacion_maxima_utilidad))
+                    _calcula_tarifa(seccion_maxima_utilidad,ocupacion_maxima_utilidad, idveh))
                 df_exportar.loc[idveh, 'Utilidades iteraciones'].append({'cambio': False, 'utilidades': {x:y for x, y in zip(df_calculos['secciones'],df_calculos['utilidad_calles'])}})
 
                 return (
@@ -832,11 +849,13 @@ def AAPIManage(time, timeSta, timTrans, SimStep):
                     #AKIPrintString("seciones: {}".format(str(df_exportar_secciones)))
                     df_exportar_secciones=df_exportar_secciones.append({'seccion':seccion, 'tarifa':tarif,'tiempo':tiempo_global},ignore_index=True)
         if ejecutar_1_vez:
-            for seccion in secciones_park:
-                longitud_seccion = AKIInfNetGetSectionANGInf(seccion).length
-                longitud_secciones[seccion] = longitud_seccion
+            todas_las_secciones=AKIInfNetNbSectionsANG()
+            for seccion in range(0, todas_las_secciones):
+                id_de_la_seccion=AKIInfNetGetSectionANGId(seccion)
+                longitud_seccion = AKIInfNetGetSectionANGInf(id_de_la_seccion).length
+                longitud_secciones[id_de_la_seccion] = longitud_seccion
             AKIPrintString(
-                "Segmentos seccion aparcammiento {}".format(
+                "Todas_las _secciones {}".format(
                     str(longitud_secciones)))
             ejecutar_1_vez = False
 
@@ -895,6 +914,20 @@ def AAPIManage(time, timeSta, timTrans, SimStep):
                     df_exportar.loc[vehiculo, 'track'].append((seccion_vehiculo,time,'no sitio'))
                     df_exportar.loc[vehiculo, 'track_secciones'].append([])
                     reasigna_plaza(vehiculo, time)
+            elif (seccion_vehiculo in secciones_parking_subterraneo and seccion_vehiculo == secciones_destino_vehiculo[vehiculo]):
+                if vehiculo in lista_buscando_sitio:
+                    lista_buscando_sitio.remove(vehiculo)
+                AKIVehTrackedModifySpeed(vehiculo, 0.0)
+                tiempo_aparcamiento = genera_tiempo_aparcamiento()
+                time_salida = float(time) + tiempo_aparcamiento
+                df_exportar.loc[vehiculo,
+                                        'Duracion aparcamiento'] = tiempo_aparcamiento / 60
+                dict_vehiculos_aparcados[vehiculo] = (
+                            seccion_vehiculo, time_salida)
+
+                df_exportar.loc[vehiculo, 'track'].append((seccion_vehiculo,time,'aparca'))
+                AKIVehTrackedRemove(vehiculo)
+                df_exportar.loc[vehiculo, 'Hora aparcamiento'] = time
 
     except Exception as e:
         # imprime_texto(str(traceback.format_exc()))
@@ -934,9 +967,10 @@ def AAPIUnLoad():
 
 def AAPIEnterVehicle(idveh, idsection):
     # conn.send(idveh)
-    global transito
+    global transito, tipo_vehiculo
     AKIVehSetAsTracked(idveh)
     info_estatica_vehiculo = AKIVehTrackedGetStaticInf(idveh)
+    tipo_vehiculo=info_estatica_vehiculo.type
     try:
         # con el rnd seleccionamos los que aparcan y los que no
         if (info_estatica_vehiculo.centroidDest in centroides_objetivo
@@ -949,6 +983,8 @@ def AAPIEnterVehicle(idveh, idsection):
 ##            imprime_texto("seccion_ dest: ",str(seccion_destino))
             df_exportar.loc[idveh, 'Hora Entrada'] = tiempo_global
             df_exportar.loc[idveh, 'Tipo usuario'] = tipo_usuario
+            df_exportar.loc[idveh, 'distancia_recorrida']=0
+            df_exportar.loc[idveh, 'consumo_total']=0
             df_exportar.loc[idveh, 'Tarifa'] = []
             df_exportar.loc[idveh, 'ID'] = idveh
             df_exportar.loc[idveh, 'Utilidades iteraciones'] = []
@@ -970,14 +1006,15 @@ def AAPIEnterVehicle(idveh, idsection):
 # with NamedTemporaryFile() as archivo_temporal:
 ##                df_exportar.to_pickle(archivo_temporal, "bz2")
 # conn.send(df_exportar.to_dict())
-##            imprime_texto("seccion_ park: ",str(seccion_aparcamiento))
+#            imprime_texto("seccion_ park: ",str(seccion_aparcamiento))
             centroide_aparcamiento = dict_centroide_secciones[int(
                 seccion_aparcamiento)]
 ##            imprime_texto("centroide_ dest: ", str(centroide_aparcamiento))
             info_estatica_vehiculo.__setattr__(
                 "centroidDest", int(centroide_aparcamiento))
             # a�adimos la id a una lista para saber cuales estamos trackeando
-##            AKIPrintString("Siguiendo al vehiculo {}".format(str(idveh)))
+            AKIPrintString("Siguiendo al vehiculo con destino a {}, dirigiendose a {}, tipo {}".format(str(seccion_destino),
+                            str(seccion_aparcamiento), str(tipo_usuario)))
             lista_id_objetivo.append(idveh)
             # guardamos la seccion de destino
             secciones_destino_vehiculo[idveh] = int(seccion_aparcamiento)
@@ -987,7 +1024,7 @@ def AAPIEnterVehicle(idveh, idsection):
 # idg=ANGConnVehGetGKSimVehicleId(idveh)
     ##        ANGConnSetText (idg, ctypes.c_ushort(b"juan"))
             info_estatica_vehiculo.__setattr__("width", 2.01)
-            info_estatica_vehiculo.__setattr__("type", 2)
+            # info_estatica_vehiculo.__setattr__("type", 2)
     # info_estatica_vehiculo.__setattr__("centroidDest",1012)
 # imprime_texto(5)
             a = AKIVehTrackedSetStaticInf(idveh, info_estatica_vehiculo)
@@ -1031,6 +1068,9 @@ def AAPIEnterVehicleSection(idveh, idsection, atime):
     try:
         #guardamos las seciones por las que va pasando el vehiculo en su busqueda de de sitio
         if idveh in lista_id_objetivo:
+            consumo_seccion=AKIEstGetCurrentStatisticsSectionFuelCons( idsection, tipo_vehiculo)
+            df_exportar.loc[idveh, 'consumo_total']=df_exportar.loc[idveh, 'consumo_total']+consumo_seccion
+            df_exportar.loc[idveh, 'distancia_recorrida']=df_exportar.loc[idveh, 'distancia_recorrida']+longitud_secciones[idsection]
             df_exportar.loc[idveh, 'track_secciones'][-1].append(idsection)
             df_exportar.loc[idveh, 'track'].append((idsection,atime,'paso'))
             if idsection in secciones_park and idsection != secciones_destino_vehiculo[

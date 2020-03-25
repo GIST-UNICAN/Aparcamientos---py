@@ -860,7 +860,7 @@ def AAPIManage(time, timeSta, timTrans, SimStep):
             if (vehiculo in vehiculos_parados):
                 if time >= vehiculos_parados[vehiculo] + \
                         tiempo_parada_aparcamiento:
-                    AKIVehTrackedRemove(vehiculo)
+                    # AKIVehTrackedRemove(vehiculo)
                     df_exportar.loc[vehiculo, 'Hora aparcamiento'] = time
                 else:
                     AKIVehTrackedModifySpeed(vehiculo, 0.0)
