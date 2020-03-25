@@ -124,7 +124,6 @@ ruta_excel_exportar = ""
 columnas_exportar = ['ID',
                      'Tipo usuario',
                      'distancia_recorrida',
-                      'consumo_total',
     'Hora Entrada',
     'T busqueda inicial',
     'T busqueda real',
@@ -163,7 +162,7 @@ tiempo_busqueda_min = 1 * 60
 tiempos_busqueda_desviacion = 120
 tiempos_busqueda_medio = 240
 tiempo_acceso_destino = 120
-rangos_tarifa_superficie = (1,2,3.5)
+rangos_tarifa_superficie = (1.45,1.45,1.45)
 tarifa_generica_calle = 1.45
 rangos_ocupa_superficie = (60,80,100)
 tiempo_actualizacion_tarifas=15
@@ -174,7 +173,7 @@ tiempo_busqueda_min = 2
 media_tiempo_busqueda = 6.58
 std_tiempo_busqueda = 4.87
 tiempo_busqueda_subterraneo= 1.54
-porcentaje_informados=50
+porcentaje_informados=0
 porcentaje_no_informados=100-porcentaje_informados
 
 
@@ -940,6 +939,30 @@ def AAPIPostManage(time, timeSta, timTrans, SimStep):
 
 
 def AAPIFinish():
+    #calculo consumos hay que hace un artificio para que se tengan en cuenta el diferencial de calcular el consumo en la suma de las seciones
+    
+    consumos=defaultdict(float)
+    factor_expansion=1
+    for vehiculo in range(1,AKIVehGetNbVehTypes ()+1 ):
+        anyNonAsciiChar = boolp()
+        nombre = AKIConvertToAsciiString(AKIVehGetVehTypeName(vehiculo), True, anyNonAsciiChar)
+        todas_las_secciones=AKIInfNetNbSectionsANG()
+        coches_entran=float(AKIEstGetGlobalStatisticsSystem(vehiculo).inputCount)
+        consumen=float(AKIEstGetGlobalStatisticsSystemFuelCons(vehiculo))
+        for seccion in range(0, todas_las_secciones):
+            id_de_la_seccion=AKIInfNetGetSectionANGId(seccion)
+            consumo_seccion=AKIEstGetGlobalStatisticsSectionFuelCons( id_de_la_seccion, vehiculo)
+            consumos[str(vehiculo)+" "+str(nombre)]=consumos[str(vehiculo)+" "+str(nombre)]+consumo_seccion
+            # AKIPrintString("consumo seccion {} 1 {} 2 {}".format(str(id_de_la_seccion), str(consumo_seccion),str(consumo_seccion)))
+        if vehiculo==1:
+            factor_expansion = (consumen-float(consumos[str(vehiculo)+" "+str(nombre)]))/coches_entran
+        consumos[str(vehiculo)+" "+str(nombre)]=consumos[str(vehiculo)+" "+str(nombre)]+factor_expansion*coches_entran
+    a=AKIEstGetGlobalStatisticsSystemFuelCons(1)
+    b=AKIEstGetGlobalStatisticsSystemFuelCons(2)
+    consumos['c']=a
+    consumos['par']=b
+    df_consumos=pd.DataFrame.from_dict(consumos, columns=['Consumo',], orient='index')
+    
     logging.error('fin')
     mascara = df_exportar['Hora aparcamiento'].notnull()
     df_enviar = df_exportar[mascara]
@@ -953,6 +976,10 @@ def AAPIFinish():
     df_exportar_secciones.to_excel(ruta_excel_exportar +
         fecha_hora_txt +
         r"informe_tarifas.xlsx",
+        engine="xlsxwriter")
+    df_consumos.to_excel(ruta_excel_exportar +
+        fecha_hora_txt +
+        r"informe_consumos.xlsx",
         engine="xlsxwriter")
     with open(r"C:\Users\Tablet\Documents\GitHub\Aparcamientos---py\logaimsun.log", 'w') as file:
         file.write(str(lista_info_1))
@@ -984,7 +1011,6 @@ def AAPIEnterVehicle(idveh, idsection):
             df_exportar.loc[idveh, 'Hora Entrada'] = tiempo_global
             df_exportar.loc[idveh, 'Tipo usuario'] = tipo_usuario
             df_exportar.loc[idveh, 'distancia_recorrida']=0
-            df_exportar.loc[idveh, 'consumo_total']=0
             df_exportar.loc[idveh, 'Tarifa'] = []
             df_exportar.loc[idveh, 'ID'] = idveh
             df_exportar.loc[idveh, 'Utilidades iteraciones'] = []
@@ -1063,13 +1089,11 @@ def AAPIExitVehicle(idveh, idsection):
 ##        AKIPrintString("El vehiculo trackeado {} sale de la simulacion".format(str(idveh)))
     return 0
 
-
 def AAPIEnterVehicleSection(idveh, idsection, atime):
     try:
         #guardamos las seciones por las que va pasando el vehiculo en su busqueda de de sitio
         if idveh in lista_id_objetivo:
-            consumo_seccion=AKIEstGetCurrentStatisticsSectionFuelCons( idsection, tipo_vehiculo)
-            df_exportar.loc[idveh, 'consumo_total']=df_exportar.loc[idveh, 'consumo_total']+consumo_seccion
+            
             df_exportar.loc[idveh, 'distancia_recorrida']=df_exportar.loc[idveh, 'distancia_recorrida']+longitud_secciones[idsection]
             df_exportar.loc[idveh, 'track_secciones'][-1].append(idsection)
             df_exportar.loc[idveh, 'track'].append((idsection,atime,'paso'))
