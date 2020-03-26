@@ -162,7 +162,7 @@ tiempo_busqueda_min = 1 * 60
 tiempos_busqueda_desviacion = 120
 tiempos_busqueda_medio = 240
 tiempo_acceso_destino = 120
-rangos_tarifa_superficie = (1.45,1.45,1.45)
+rangos_tarifa_superficie = (1,2,3.5)
 tarifa_generica_calle = 1.45
 rangos_ocupa_superficie = (60,80,100)
 tiempo_actualizacion_tarifas=15
@@ -173,7 +173,7 @@ tiempo_busqueda_min = 2
 media_tiempo_busqueda = 6.58
 std_tiempo_busqueda = 4.87
 tiempo_busqueda_subterraneo= 1.54
-porcentaje_informados=0
+porcentaje_informados=10
 porcentaje_no_informados=100-porcentaje_informados
 
 
