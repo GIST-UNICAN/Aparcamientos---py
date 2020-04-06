@@ -6,14 +6,14 @@ from collections import defaultdict
 from bisect import bisect_left
 
 
-directorios_base=(r"C:\Users\Tablet\Desktop\RESULTADOS AIMSUN\iteraciones_aimsun\modelo dinamico_2",
-                  r"C:\Users\Tablet\Desktop\RESULTADOS AIMSUN\iteraciones_aimsun\modelo ola_2")
+directorios_base=(r"C:\Users\Tablet\Desktop\RESULTADOS AIMSUN\iteraciones_aimsun_tarifa actual y dinamica realista (0.5 1 1.75)\dinamico",
+                  r"C:\Users\Tablet\Desktop\RESULTADOS AIMSUN\iteraciones_aimsun_tarifa actual y dinamica realista (0.5 1 1.75)\ola")
 
 
 
 
 for directorio in directorios_base:
-    nombre=directorio.split(" ")[2]
+    nombre=directorio.split("\\")[-1]
     archivos=glob.glob(directorio+"/*tarifas.xlsx")
     df_total=pd.DataFrame()
     df_veh_dentro=pd.DataFrame()

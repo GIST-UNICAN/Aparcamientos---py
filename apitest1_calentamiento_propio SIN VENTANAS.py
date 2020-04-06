@@ -145,6 +145,10 @@ df_exportar = pd.DataFrame(columns=columnas_exportar, index=indice_exportar)
 ##df_exportar.set_index('ID', inplace=True)
 columnas_exportar_tarifas=['seccion', 'tarifa','tiempo']
 df_exportar_secciones = pd.DataFrame(columns=columnas_exportar_tarifas)
+columnas_exportar_ocupaciones=['seccion', 'tiempo', 'ocupacion']
+df_exportar_ocupaciones = pd.DataFrame(columns=columnas_exportar_ocupaciones)
+columnas_exportar_buscando=['seccion', 'tiempo', 'ocupacion']
+df_exportar_ocupaciones = pd.DataFrame(columns=columnas_exportar_ocupaciones)
 
 # VARIABLES MODELO
 tiempo_parada_aparcamiento = 22  # en segundos
@@ -162,19 +166,20 @@ tiempo_busqueda_min = 1 * 60
 tiempos_busqueda_desviacion = 120
 tiempos_busqueda_medio = 240
 tiempo_acceso_destino = 120
-rangos_tarifa_superficie = (1,2,3.5)
-tarifa_generica_calle = 1.45
+rangos_tarifa_superficie = (0.5,1,1.75) #(1,2,3.5)
+tarifa_generica_calle = 1.45/2
 rangos_ocupa_superficie = (60,80,100)
 tiempo_actualizacion_tarifas=15
-tarifa_subterraneo = 2.75
+tarifa_subterraneo = 1.60#2.75
 utilidad_relativa_alternativas = 90
 transito = 0
 tiempo_busqueda_min = 2
 media_tiempo_busqueda = 6.58
 std_tiempo_busqueda = 4.87
 tiempo_busqueda_subterraneo= 1.54
-porcentaje_informados=10
+porcentaje_informados=0
 porcentaje_no_informados=100-porcentaje_informados
+tiempo_salvado_ocupaciones=60
 
 
 plazas_park_total = dict()
@@ -412,9 +417,9 @@ def reasigna_plaza(vehiculo, time):
 def genera_tiempo_aparcamiento():
     return max(
         tiempo_coche_aparcado_min,
-        random.gauss(
+        min(random.gauss(
             media_duracion_park,
-            std_duracion_park))
+            std_duracion_park),tiempo_coche_aparcado_max))
 
 
 def genera_tiempo_aparcamiento_inical():
@@ -742,7 +747,7 @@ def AAPILoad():
         #     fieldValues = multenterbox(errmsg, title, fieldNames, fieldValues)
         #     if fieldValues is None:
         #         break
-        ruta_excel_exportar = r"C:\Users\Tablet\Desktop\iteraciones_aimsun"
+        ruta_excel_exportar = r"C:\Users\Tablet\Desktop\RESULTADOS AIMSUN"
         # diropenbox(
         #     msg='indica la ruta de guardado de los informes',
         #     title=title,
@@ -834,10 +839,13 @@ def AAPIManage(time, timeSta, timTrans, SimStep):
         #AKIPrintString("time: {}".format(str(time)))
         # extraemos en la primera ejecuci�n la losgitud de los tramos de control
         # para sacar a los coches justo en la mitad
-        global ejecutar_1_vez, tiempo_global, plazas_park_total, plazas_park_free, df_exportar_secciones, precios_parking_street
+        global ejecutar_1_vez, tiempo_global, plazas_park_total, plazas_park_free, df_exportar_secciones, df_exportar_ocupaciones,  precios_parking_street
         tiempo_global=time
         #actulizamos las tarifas si ha lugar
-       
+        if tiempo_global % (tiempo_salvado_ocupaciones)==0 or ejecutar_1_vez:
+            for seccion in secciones_park:
+                ocup = 1- (plazas_park_free[seccion] / plazas_park_total[seccion])
+                df_exportar_ocupaciones=df_exportar_ocupaciones.append({'seccion':seccion, 'tiempo':tiempo_global, 'ocupacion': ocup},ignore_index=True)
         if tiempo_global % (tiempo_actualizacion_tarifas*60)==0 or ejecutar_1_vez:
             AKIPrintString("seciones: {}".format(str('ACTUALIZAR PRECIOS')))
             for seccion in secciones_park:
@@ -972,6 +980,10 @@ def AAPIFinish():
         ruta_excel_exportar +
         fecha_hora_txt +
         r"informe.xlsx",
+        engine="xlsxwriter")
+    df_exportar_ocupaciones.to_excel(ruta_excel_exportar +
+        fecha_hora_txt +
+        r"informe_ocupaciones.xlsx",
         engine="xlsxwriter")
     df_exportar_secciones.to_excel(ruta_excel_exportar +
         fecha_hora_txt +

@@ -13,7 +13,7 @@ def dame_grupo(fila, rangos=tuple(x for x in range(0,4201,300))):
     return bisect_left(rangos,fila['Hora Entrada'])
 
 
-archivo=r"C:\Users\Tablet\Desktop\RESULTADOS AIMSUN\iteraciones_aimsun\ola_2.xlsx"
+archivo=r"C:\Users\Tablet\Desktop\RESULTADOS AIMSUN\iteraciones_aimsun_tarifa actual y dinamica realista (0.5 1 1.75)\dinamico.xlsx"
 df=pd.read_excel(archivo, 
                  sheet_name='Sheet1')
 

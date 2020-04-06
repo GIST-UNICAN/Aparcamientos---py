@@ -6,14 +6,14 @@ from collections import defaultdict
 from bisect import bisect_left
 
 
-directorios_base=(r"C:\Users\Tablet\Desktop\RESULTADOS AIMSUN\iteraciones_aimsun\modelo dinamico_2",
-                  r"C:\Users\Tablet\Desktop\RESULTADOS AIMSUN\iteraciones_aimsun\modelo ola_2")
+directorios_base=(r"C:\Users\Tablet\Desktop\RESULTADOS AIMSUN\iteraciones_aimsun_tarifa actual y dinamica realista (0.5 1 1.75)\dinamico",
+                  r"C:\Users\Tablet\Desktop\RESULTADOS AIMSUN\iteraciones_aimsun_tarifa actual y dinamica realista (0.5 1 1.75)\ola")
 
 
 
 
 for directorio in directorios_base:
-    nombre=directorio.split(" ")[2]
+    nombre=directorio.split("\\")[-1]
     archivos=glob.glob(directorio+"/*informe.xlsx")
     df_total=pd.DataFrame()
     suma_distancias=[]
@@ -44,10 +44,10 @@ for directorio in directorios_base:
     # print(df_total.columns)
     filtro=((df_veh_dentro['hora'] !=0) & (df_veh_dentro['hora'] !=1))
     df_veh_dentro[filtro].to_excel(nombre+"_cuenta.xlsx")
-    # df_total.to_excel(nombre+".xlsx")
+    df_total.to_excel(nombre+".xlsx")
     df_total['busqueda_real']=df_total['Hora aparcamiento']-df_total['Hora Entrada']
     print(nombre+ ' media tiempo busqueda todos '+str(df_total['busqueda_real'].mean()/60))
     print(nombre+ ' media tiempo busqueda aparca calle '+str(df_total[df_total['Parking']==False]['busqueda_real'].mean()/60))
     print(nombre+' media distancia '+ str(df_total['Distancia entre nodos'].mean()))
-    # print('suma '+str(sum(suma_distancias)/len(suma_distancias)))
-    # print('std ' + str(statistics.pstdev(suma_distancias)))
+    print('suma '+str(sum(suma_distancias)/len(suma_distancias)))
+    print('std ' + str(statistics.pstdev(suma_distancias)))
