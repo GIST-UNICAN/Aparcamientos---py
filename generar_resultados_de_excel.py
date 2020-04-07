@@ -6,8 +6,8 @@ from collections import defaultdict
 from bisect import bisect_left
 
 
-directorios_base=(r"C:\Users\Tablet\Desktop\RESULTADOS AIMSUN\iteraciones_aimsun_tarifa actual y dinamica realista (0.5 1 1.75)\dinamico",
-                  r"C:\Users\Tablet\Desktop\RESULTADOS AIMSUN\iteraciones_aimsun_tarifa actual y dinamica realista (0.5 1 1.75)\ola")
+directorios_base=(r"C:\Users\Tablet\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\resultados\iteraciones_aimsun_tarifa actual y dinamica realista (0.5 1 1.75)\dinamico",
+                  r"C:\Users\Tablet\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\resultados\iteraciones_aimsun_tarifa actual y dinamica realista (0.5 1 1.75)\ola")
 
 
 
