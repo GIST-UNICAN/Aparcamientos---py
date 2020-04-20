@@ -6,8 +6,8 @@ from collections import defaultdict
 from bisect import bisect_left
 
 
-directorios_base=(r"C:\Users\Tablet\Desktop\RESULTADOS AIMSUN\iteraciones_aimsun_tarifa actual y dinamica realista (0.5 1 1.75)\dinamico",
-                  r"C:\Users\Tablet\Desktop\RESULTADOS AIMSUN\iteraciones_aimsun_tarifa actual y dinamica realista (0.5 1 1.75)\ola")
+directorios_base=(r"C:\Users\Tablet\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\resultados\simulacion_4_horas_varias_demandas\ola",
+                  r"C:\Users\Tablet\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\resultados\simulacion_4_horas_varias_demandas\dinamico")
 
 
 
@@ -17,7 +17,7 @@ for directorio in directorios_base:
     archivos=glob.glob(directorio+"/*consumos.xlsx")
     df_total=pd.DataFrame()
     df_veh_dentro=pd.DataFrame()
-    rangos_horarios=tuple(x for x in range(0,4201,60))
+    rangos_horarios=tuple(x for x in range(0,14701,60))
     for count, archivo in enumerate(archivos):
         diccionario_horarios=defaultdict(int)
         try:
