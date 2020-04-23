@@ -9,11 +9,11 @@ import pandas as pd
 from bisect import bisect_left
 from anadir_a_excel import append_df_to_excel
 
-def dame_grupo(fila, rangos=tuple(x for x in range(0,14701,60))):
-    return bisect_left(rangos,fila['Hora Entrada'])-5
+def dame_grupo(fila, rangos=tuple(x for x in range(0,14701,300))):
+    return bisect_left(rangos,fila['Hora Entrada'])-1
 
 
-archivo=r"C:\Users\Tablet\Documents\GitHub\Aparcamientos---py\dinamico.xlsx"
+archivo=r"C:\Users\Tablet\Documents\GitHub\Aparcamientos---py\100 informados.xlsx"
 df=pd.read_excel(archivo, 
                  sheet_name='Sheet1')
 

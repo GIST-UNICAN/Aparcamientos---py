@@ -6,8 +6,11 @@ from collections import defaultdict
 from bisect import bisect_left
 
 
-directorios_base=(r"C:\Users\Tablet\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\resultados\simulacion_4_horas_varias_demandas\ola",
-                  r"C:\Users\Tablet\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\resultados\simulacion_4_horas_varias_demandas\dinamico")
+directorios_base=(r"C:\Users\Tablet\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\resultados\varios escenarios dinamicos (20 40 60 80 100) informados\20 informados",
+                  r"C:\Users\Tablet\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\resultados\varios escenarios dinamicos (20 40 60 80 100) informados\40 informados",
+                  r"C:\Users\Tablet\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\resultados\varios escenarios dinamicos (20 40 60 80 100) informados\60 informados",
+                  r"C:\Users\Tablet\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\resultados\varios escenarios dinamicos (20 40 60 80 100) informados\80 informados",
+                  r"C:\Users\Tablet\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\resultados\varios escenarios dinamicos (20 40 60 80 100) informados\100 informados")
 
 
 
@@ -19,7 +22,7 @@ for directorio in directorios_base:
     df_total=pd.DataFrame()
     suma_distancias=[]
     df_veh_dentro=pd.DataFrame()
-    rangos_horarios=tuple(x for x in range(0,14701,60))
+    rangos_horarios=tuple(x for x in range(0,14701,300))
     for count, archivo in enumerate(archivos):
         print('iter: ', str(count))
         diccionario_horarios=defaultdict(int)
@@ -28,8 +31,8 @@ for directorio in directorios_base:
             suma_distancias.append(df['distancia_recorrida'].sum())
             # suma_distancias.append(df['Consumo']['2 Coche- park'])
             def asigna_horarios(fila):
-                gap_entra=bisect_left(rangos_horarios, float(fila['Hora Entrada']))-5
-                gap_sale=bisect_left(rangos_horarios, float(fila['Hora aparcamiento']))-5
+                gap_entra=bisect_left(rangos_horarios, float(fila['Hora Entrada']))-1
+                gap_sale=bisect_left(rangos_horarios, float(fila['Hora aparcamiento']))-1
                 tupla_rangos=tuple(range(gap_entra,gap_sale+1))
                 for gap in tupla_rangos:
                     diccionario_horarios[gap]=diccionario_horarios[gap]+1

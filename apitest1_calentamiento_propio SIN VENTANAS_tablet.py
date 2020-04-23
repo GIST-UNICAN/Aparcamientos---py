@@ -177,7 +177,7 @@ tiempo_busqueda_min = 2
 media_tiempo_busqueda = 6.58
 std_tiempo_busqueda = 4.87
 tiempo_busqueda_subterraneo= 1.54
-porcentaje_informados=50
+porcentaje_informados=100
 porcentaje_no_informados=100-porcentaje_informados
 tiempo_salvado_ocupaciones=60
 
@@ -622,6 +622,7 @@ def genera_seccion_aparcamiento(seccion_destino, idveh,
                     abs((abs(utilidad_calle_actual) - abs(utilidad_primaria)) / abs(utilidad_primaria))
 ##                logging.error('Utilidad relativa: '+str(u_relativa))
                 if u_relativa > utilidad_relativa_alternativas:
+                    # AKIPrintString('cambia util: '+str(seccion_origen))
                     distancia_max_utilidad = df_calculos[df_calculos['secciones']
                                                          == seccion_origen]["tiempos"].iloc[0] * 5000 / 60
                     ocupacion_maxima_utilidad = df_calculos[df_calculos['secciones']
@@ -1051,8 +1052,8 @@ def AAPIEnterVehicle(idveh, idsection):
             info_estatica_vehiculo.__setattr__(
                 "centroidDest", int(centroide_aparcamiento))
             # a�adimos la id a una lista para saber cuales estamos trackeando
-            AKIPrintString("Siguiendo al vehiculo con destino a {}, dirigiendose a {}, tipo {}".format(str(seccion_destino),
-                            str(seccion_aparcamiento), str(tipo_usuario)))
+            # AKIPrintString("Siguiendo al vehiculo con destino a {}, dirigiendose a {}, tipo {}".format(str(seccion_destino),
+            #                 str(seccion_aparcamiento), str(tipo_usuario)))
             lista_id_objetivo.append(idveh)
             # guardamos la seccion de destino
             secciones_destino_vehiculo[idveh] = int(seccion_aparcamiento)
