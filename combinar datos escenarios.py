@@ -18,6 +18,7 @@ for archivo in archivos:
     df=pd.read_excel(archivo,index_col=0).drop(['simulacion'], axis=1)
     gr=df.groupby(['hora']).mean()
     gr=gr.rename(columns={'cuenta':int(archivo.split(" ")[-2].split("\\")[-1])})
+    gr=gr.cumsum()
     df_global=pd.concat((df_global,gr),axis=1)
 
 df_global = df_global.reindex(sorted(df_global.columns), axis=1).drop(13)
@@ -61,7 +62,7 @@ fig, axes = plt.subplots(nrows=2, ncols=2,figsize=(10,7))
 
 for z,x,y in zip(('CO2','PM','VOC','NOX'),(0,0,1,1),(0,1,0,1)): 
     print(x,y)
-    df_co2= df_base[df_base['variable']==z]
+    df_co2= df_base[df_base['variable']==z].cumsum()
     df_co2.drop(['variable'], axis=1, inplace=True)
     df_co2 = df_co2.reindex(sorted(df_co2.columns), axis=1).drop(65)
     dfs.append(df_co2)   
@@ -155,3 +156,28 @@ gr.to_excel(writer, sheet_name='EVOLUCION TIEMPO BUSQUEDA')
 gr1.to_excel(writer, sheet_name='FACTORES TIPOS USUARIOS')
 df_base_regresion.to_excel(writer, sheet_name='CORRELACION VALORES')
 writer.save()
+#%%
+#evolución ocupación
+archivos =glob.glob(directorio+"/*ocupaciones.xlsx")
+df_global_ocu=pd.DataFrame()
+from bisect import bisect_left
+grupos=tuple(x for x in range(0,9000,300))
+def grupo(fila):
+    return bisect_left(grupos,fila)
+for archivo in archivos:
+    df=pd.read_excel(archivo,index_col=0).drop(['seccion'], axis=1)
+    gr=df.groupby(['tiempo']).mean()
+    gr=gr.reset_index()
+    gr['grupo']=gr['tiempo'].apply(grupo)
+    import re
+    col=int(re.findall(re.compile('[0-9]+ i'),archivo)[0].split(" ")[0])
+    gr=gr.rename(columns={'ocupacion':col})
+    gr.drop('tiempo', inplace=True, axis=1)
+    gr=gr.groupby(['grupo']).mean()
+    # gr=gr.cumsum()
+    df_global_ocu=pd.concat((df_global_ocu,gr),axis=1)
+
+df_global_ocu = df_global_ocu.reindex(sorted(df_global_ocu.columns), axis=1).drop(13).drop(14).drop(0)
+df_global_ocu.index=df_global_ocu.index*5
+plt.figure(); df_global_ocu.plot(style=markers ); plt.legend(title='% informed'); plt.xlabel("time passed (min)");
+plt.ylabel("n car searching")
