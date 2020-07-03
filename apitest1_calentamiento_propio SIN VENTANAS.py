@@ -747,7 +747,7 @@ def AAPILoad():
         #     fieldValues = multenterbox(errmsg, title, fieldNames, fieldValues)
         #     if fieldValues is None:
         #         break
-        ruta_excel_exportar = r"C:\Users\Tablet\Desktop\RESULTADOS AIMSUN"
+        ruta_excel_exportar = r"E:\OneDrive - Universidad de Cantabria\Recordar GIST - VARIOS\Aparcamientos\resultados_temporales"
         # diropenbox(
         #     msg='indica la ruta de guardado de los informes',
         #     title=title,
