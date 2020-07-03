@@ -19,7 +19,7 @@ from functools import partial
 from time import clock
 from numpy import dtype
 from datetime import datetime
-import pip
+# import pip
 from multiprocessing.connection import Listener
 from multiprocessing.connection import Client
 from multiprocessing import Queue
@@ -177,7 +177,7 @@ tiempo_busqueda_min = 2
 media_tiempo_busqueda = 6.58
 std_tiempo_busqueda = 4.87
 tiempo_busqueda_subterraneo= 1.54
-porcentaje_informados=0
+porcentaje_informados=50
 porcentaje_no_informados=100-porcentaje_informados
 tiempo_salvado_ocupaciones=60
 
@@ -747,7 +747,11 @@ def AAPILoad():
         #     fieldValues = multenterbox(errmsg, title, fieldNames, fieldValues)
         #     if fieldValues is None:
         #         break
+<<<<<<< HEAD
         ruta_excel_exportar = r"E:\OneDrive - Universidad de Cantabria\Recordar GIST - VARIOS\Aparcamientos\resultados_temporales"
+=======
+        ruta_excel_exportar = r"C:\Users\Tablet\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\resultados_temporales"
+>>>>>>> 7c8b5fdd83b87e53b508924e074187bcc56c14c3
         # diropenbox(
         #     msg='indica la ruta de guardado de los informes',
         #     title=title,
