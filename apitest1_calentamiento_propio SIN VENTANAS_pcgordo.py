@@ -19,7 +19,7 @@ from functools import partial
 from time import clock
 from numpy import dtype
 from datetime import datetime
-# import pip
+import pip
 from multiprocessing.connection import Listener
 from multiprocessing.connection import Client
 from multiprocessing import Queue
@@ -57,8 +57,8 @@ logging.error('No pasa')
 
 
 # GEOMETRIA APARCAMIENTOS
-ruta_excel = r"C:\Users\Tablet\Documents\GitHub\Aparcamientos---py\plazas_seccion.xlsx"
-ruta_excel_distancias = r"C:\Users\Tablet\Documents\GitHub\Aparcamientos---py\distancias.xls"
+ruta_excel = r"E:\Program Files\Aimsun\Aimsun Next 8.3\programming\Aimsun Next API\AAPIPython\Micro\plazas_seccion.xlsx"
+ruta_excel_distancias = r"E:\Program Files\Aimsun\Aimsun Next 8.3\programming\Aimsun Next API\AAPIPython\Micro\distancias.xls"
 centroides_objetivo = (
     34894,
     34892,
@@ -177,7 +177,7 @@ tiempo_busqueda_min = 2
 media_tiempo_busqueda = 6.58
 std_tiempo_busqueda = 4.87
 tiempo_busqueda_subterraneo= 1.54
-porcentaje_informados=50
+porcentaje_informados=0
 porcentaje_no_informados=100-porcentaje_informados
 tiempo_salvado_ocupaciones=60
 
@@ -291,12 +291,12 @@ class Timer:
     def __exit__(self, *args):
         self.end = clock()
         self.interval = self.end - self.start
-        with open(r"C:\Users\Tablet\Documents\GitHub\Aparcamientos---py\log_time.txt", 'a') as log:
+        with open(r"E:\Program Files\Aimsun\Aimsun Next 8.3\programming\Aimsun Next API\AAPIPython\Micro\log_time.txt", 'a') as log:
             print(self.nombre, " tardo ", self.interval, "segundos.", file=log)
 
 
 def imprime_texto(*txt):
-    with open(r"C:\Users\Tablet\Documents\GitHub\Aparcamientos---py\log.txt", 'a') as log:
+    with open(r"E:\Program Files\Aimsun\Aimsun Next 8.3\programming\Aimsun Next API\AAPIPython\Micro\log.txt", 'a') as log:
         print(*txt, file=log)
 
 
@@ -747,11 +747,7 @@ def AAPILoad():
         #     fieldValues = multenterbox(errmsg, title, fieldNames, fieldValues)
         #     if fieldValues is None:
         #         break
-<<<<<<< HEAD
         ruta_excel_exportar = r"E:\OneDrive - Universidad de Cantabria\Recordar GIST - VARIOS\Aparcamientos\resultados_temporales"
-=======
-        ruta_excel_exportar = r"C:\Users\Tablet\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\resultados_temporales"
->>>>>>> 7c8b5fdd83b87e53b508924e074187bcc56c14c3
         # diropenbox(
         #     msg='indica la ruta de guardado de los informes',
         #     title=title,
@@ -997,7 +993,7 @@ def AAPIFinish():
         fecha_hora_txt +
         r"informe_consumos.xlsx",
         engine="xlsxwriter")
-    with open(r"C:\Users\Tablet\Documents\GitHub\Aparcamientos---py\logaimsun.log", 'w') as file:
+    with open(r"E:\Program Files\Aimsun\Aimsun Next 8.3\programming\Aimsun Next API\AAPIPython\Micro\logaimsun.log", 'w') as file:
         file.write(str(lista_info_1))
         file.write("\n")
         file.write(str(lista_info_2))

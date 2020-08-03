@@ -1,10 +1,11 @@
-# -*- coding: cp1252 -*-
+﻿# -*- coding: cp1252 -*-
 from __future__ import print_function
 from __future__ import division
+import parametros
 import sys
-sys.path.insert(1, 'C:\Program Files\Aimsun\Aimsun Next 8.3\programming\Aimsun Next API\AAPIPython\Micro')
+sys.path.insert(1, parametros.aimsun_micro_folder)
 from AAPI import *
-SITEPACKAGES = "C:\\Python27\\lib\\site-packages"
+SITEPACKAGES = parametros.python_site_packages
 if SITEPACKAGES not in sys.path:
 	sys.path.append(SITEPACKAGES)
 import random
@@ -42,54 +43,18 @@ from collections import defaultdict
 logging.error('No pasa')
 
 #####################################################################
-## todo ##
-#####################################################################
-
-# incluir funci�n eleccion
-# optimizar variable coches aparcados
-# retenci�on salida vehiculos
-# terminar funcion timepo de busqueda
-# parametrizar v peaton
-
-#####################################################################
 ## variables ##
 #####################################################################
 
 
 # GEOMETRIA APARCAMIENTOS
-ruta_excel = r"C:\Users\Tablet\Documents\GitHub\Aparcamientos---py\plazas_seccion.xlsx"
-ruta_excel_distancias = r"C:\Users\Tablet\Documents\GitHub\Aparcamientos---py\distancias.xls"
-centroides_objetivo = (
-    34894,
-    34892,
-    34783,
-    34799,
-    34798,
-    34797,
-    34796,
-    34795,
-    34784,
-    34785,
-    34786,
-    34827,
-    34786,
-    34788,
-    34787,
-    34790,
-    34792,
-    34791,
-    34793,
-    34794,
-    34800,
-    34801,
-    34828,
-    34829,
-    34830,
-    34875)
+ruta_excel = parametros.excel_parking_slots_sections
+ruta_excel_distancias = parametros.excel_distance_between_sections
+centroides_objetivo = parametros.centroids_parking
 dict_secciones_centroide = dict()
 # se ponen directamente las de aparcamiento
-dict_centroide_secciones = {1276: 1331, 1294: 1333}
-secciones_parking_subterraneo = (1294, 1276)
+dict_centroide_secciones = parametros.dic_parking_centroid_section
+secciones_parking_subterraneo = parametros.sections_parking
 secciones_park = set()  # (889,992,998,865,862,899,1129,1092,1089,1042,1059,1058,1056,901,892,1047,1043,934,975,946,1066,1043,1085,1086,1146,1079,1078,968,893,895)
 random_plazas_hasta = 9
 random_plazas_hasta_libres = 5
@@ -151,35 +116,35 @@ columnas_exportar_buscando=['seccion', 'tiempo', 'ocupacion']
 df_exportar_ocupaciones = pd.DataFrame(columns=columnas_exportar_ocupaciones)
 
 # VARIABLES MODELO
-tiempo_parada_aparcamiento = 22  # en segundos
+tiempo_parada_aparcamiento = parametros.parking_stop_time  # en segundos
 # tiempo mímino que un coche puede estar en una plaza
-tiempo_coche_aparcado_min = 5 * 60
+tiempo_coche_aparcado_min = parametros.min_parking_time
 # tiempo máximo que un coche puede estar en una plaza
-tiempo_coche_aparcado_max = 120 * 60 #segundos
-duracion_aparcamiento_min = 10 * 60
+tiempo_coche_aparcado_max = parametros.max_parking_time #segundos
+duracion_aparcamiento_min = 10 * 60 # en desuso
 tiempo_aparcamiento_avg = tiempo_coche_aparcado_min * \
     0.5 + tiempo_coche_aparcado_max * 0.5
-media_duracion_park = 60 * 60
-std_duracion_park = 60 * 60
-ocupacion_inicial = 95
-tiempo_busqueda_min = 1 * 60
-tiempos_busqueda_desviacion = 120
-tiempos_busqueda_medio = 240
-tiempo_acceso_destino = 120
-rangos_tarifa_superficie = (0.5,1,1.75) #(1,2,3.5)
-tarifa_generica_calle = 1.45/2
-rangos_ocupa_superficie = (60,80,100)
-tiempo_actualizacion_tarifas=15
+media_duracion_park = parametros.avg_parking_duration
+std_duracion_park = parametros.std_parking_duration
+ocupacion_inicial = parametros.initial_ocupancy
+tiempo_busqueda_min = parametros.min_search_time
+tiempos_busqueda_desviacion = parametros.std_search_time
+tiempos_busqueda_medio = parametros.avg_search_time
+tiempo_acceso_destino = parametros.walking_time_to_destination
+rangos_tarifa_superficie = parametros.on_street_rates #(1,2,3.5)
+tarifa_generica_calle = parametros.on_street_standart_rate_not_informed
+rangos_ocupa_superficie = parametros.ocupation_ranges
+tiempo_actualizacion_tarifas=parametros.time_rates_update
 tarifa_subterraneo = 1.60#2.75
 utilidad_relativa_alternativas = 90
 transito = 0
-tiempo_busqueda_min = 2
-media_tiempo_busqueda = 6.58
-std_tiempo_busqueda = 4.87
-tiempo_busqueda_subterraneo= 1.54
-porcentaje_informados=50
+tiempo_busqueda_min = parametros.min_search_time
+media_tiempo_busqueda = parametros.avg_search_time
+std_tiempo_busqueda = parametros.std_search_time
+tiempo_busqueda_subterraneo= parametros.min_search_time_parking
+porcentaje_informados=parametros.percentage_informed
 porcentaje_no_informados=100-porcentaje_informados
-tiempo_salvado_ocupaciones=60
+tiempo_salvado_ocupaciones=parametros.time_occupancy_saved
 
 
 plazas_park_total = dict()
@@ -291,12 +256,12 @@ class Timer:
     def __exit__(self, *args):
         self.end = clock()
         self.interval = self.end - self.start
-        with open(r"C:\Users\Tablet\Documents\GitHub\Aparcamientos---py\log_time.txt", 'a') as log:
+        with open(parametros.time_log_file, 'a') as log:
             print(self.nombre, " tardo ", self.interval, "segundos.", file=log)
 
 
 def imprime_texto(*txt):
-    with open(r"C:\Users\Tablet\Documents\GitHub\Aparcamientos---py\log.txt", 'a') as log:
+    with open(parametros.log_file, 'a') as log:
         print(*txt, file=log)
 
 
@@ -747,11 +712,9 @@ def AAPILoad():
         #     fieldValues = multenterbox(errmsg, title, fieldNames, fieldValues)
         #     if fieldValues is None:
         #         break
-<<<<<<< HEAD
-        ruta_excel_exportar = r"E:\OneDrive - Universidad de Cantabria\Recordar GIST - VARIOS\Aparcamientos\resultados_temporales"
-=======
-        ruta_excel_exportar = r"C:\Users\Tablet\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\resultados_temporales"
->>>>>>> 7c8b5fdd83b87e53b508924e074187bcc56c14c3
+
+        ruta_excel_exportar = parametros.results_export_path
+
         # diropenbox(
         #     msg='indica la ruta de guardado de los informes',
         #     title=title,
@@ -997,7 +960,7 @@ def AAPIFinish():
         fecha_hora_txt +
         r"informe_consumos.xlsx",
         engine="xlsxwriter")
-    with open(r"C:\Users\Tablet\Documents\GitHub\Aparcamientos---py\logaimsun.log", 'w') as file:
+    with open(parametros.log_aimsun_file, 'w') as file:
         file.write(str(lista_info_1))
         file.write("\n")
         file.write(str(lista_info_2))
