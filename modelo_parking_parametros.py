@@ -1021,8 +1021,8 @@ def AAPIEnterVehicle(idveh, idsection):
             info_estatica_vehiculo.__setattr__(
                 "centroidDest", int(centroide_aparcamiento))
             # a�adimos la id a una lista para saber cuales estamos trackeando
-            AKIPrintString("Siguiendo al vehiculo con destino a {}, dirigiendose a {}, tipo {}".format(str(seccion_destino),
-                            str(seccion_aparcamiento), str(tipo_usuario)))
+##            AKIPrintString("Siguiendo al vehiculo con destino a {}, dirigiendose a {}, tipo {}".format(str(seccion_destino),
+##                            str(seccion_aparcamiento), str(tipo_usuario)))
             lista_id_objetivo.append(idveh)
             # guardamos la seccion de destino
             secciones_destino_vehiculo[idveh] = int(seccion_aparcamiento)
@@ -1121,7 +1121,6 @@ def AAPIEnterPedestrian(idPedestrian, originCentroid):
 
 def AAPIExitPedestrian(idPedestrian, destinationCentroid):
     return 0
-
 
 def AAPIPreRouteChoiceCalculation(time, timeSta):
     return 0
