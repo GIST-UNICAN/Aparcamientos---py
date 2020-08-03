@@ -1,4 +1,4 @@
-﻿# -*- coding: cp1252 -*-
+# -*- coding: cp1252 -*-
 from __future__ import print_function
 from __future__ import division
 import parametros
@@ -40,7 +40,7 @@ from collections import defaultdict
 
 #pip.main(['install','pandas'])
 
-logging.error('No pasa')
+logging.error('Modulo cargado')
 
 #####################################################################
 ## variables ##
@@ -256,13 +256,14 @@ class Timer:
     def __exit__(self, *args):
         self.end = clock()
         self.interval = self.end - self.start
-        with open(parametros.time_log_file, 'a') as log:
-            print(self.nombre, " tardo ", self.interval, "segundos.", file=log)
+##        with open(parametros.time_log_file, 'a') as log:
+##            print(self.nombre, " tardo ", self.interval, "segundos.", file=log)
 
 
 def imprime_texto(*txt):
-    with open(parametros.log_file, 'a') as log:
-        print(*txt, file=log)
+      pass
+##    with open(parametros.log_file, 'a') as log:
+##        print(*txt, file=log)
 
 
 def seleccionar_vehiculo_rnd():
@@ -746,6 +747,7 @@ def AAPIInit():
     global lista_secciones_con_comercios, lista_probabilidades, df_distancias
     ever=sys.executable
     AKIPrintString(str(ever))
+    reload(parametros)
     AKIPrintString("init")
     # �cargamos el excel de las distancias
     df_distancias = pd.read_excel(ruta_excel_distancias, header=0)
@@ -961,9 +963,10 @@ def AAPIFinish():
         r"informe_consumos.xlsx",
         engine="xlsxwriter")
     with open(parametros.log_aimsun_file, 'w') as file:
-        file.write(str(lista_info_1))
-        file.write("\n")
-        file.write(str(lista_info_2))
+        pass
+##        file.write(str(lista_info_1))
+##        file.write("\n")
+##        file.write(str(lista_info_2))
     return 0
 
 
