@@ -389,7 +389,7 @@ def genera_tiempo_aparcamiento():
 
 
 def genera_tiempo_aparcamiento_inical():
-    return random.randint(0, tiempo_coche_aparcado_max)
+    return random.randint(0, 120*60)
 
 
 def _genera_tiempo_busqueda():
