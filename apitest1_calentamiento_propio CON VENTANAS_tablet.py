@@ -159,8 +159,8 @@ tiempo_coche_aparcado_max = 120 * 60 #segundos
 duracion_aparcamiento_min = 10 * 60
 tiempo_aparcamiento_avg = tiempo_coche_aparcado_min * \
     0.5 + tiempo_coche_aparcado_max * 0.5
-media_duracion_park = 60 * 60
-std_duracion_park = 60 * 60
+media_duracion_park = 100 * 60
+std_duracion_park = 80 * 60
 ocupacion_inicial = 95
 tiempo_busqueda_min = 1 * 60
 tiempos_busqueda_desviacion = 120
@@ -369,7 +369,7 @@ def actualiza_grafico(
             atr = ANGConnGetAttribute(
                 AKIConvertFromAsciiString("GKSection::ALIAS"))
             ANGConnSetAttributeValueStringA(
-                atr, seccion_vehiculo, "{} libres de {}".format(
+                atr, seccion_vehiculo, "{} free of {}".format(
                     plazas_park_free[seccion_vehiculo], plazas_totales_seccion))
     libres = str(max(0, sum(plazas_park_free.values())))
     aparcados = str(sum(plazas_park_full.values()))
