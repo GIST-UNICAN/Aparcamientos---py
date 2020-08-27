@@ -6,12 +6,9 @@ from collections import defaultdict
 from bisect import bisect_left
 
 
-directorios_base=(r"C:\Users\Tablet\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\resultados\varios escenarios dinamicos (20 40 60 80 100) informados\20 informados",
-                  r"C:\Users\Tablet\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\resultados\varios escenarios dinamicos (20 40 60 80 100) informados\40 informados",
-                  r"C:\Users\Tablet\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\resultados\varios escenarios dinamicos (20 40 60 80 100) informados\60 informados",
-                  r"C:\Users\Tablet\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\resultados\varios escenarios dinamicos (20 40 60 80 100) informados\80 informados",
-                  r"C:\Users\Tablet\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\resultados\varios escenarios dinamicos (20 40 60 80 100) informados\100 informados")
-
+directorios_base=(r"D:\Onedrive\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\resultados\4 horas varias demandas sin limite de tiempo 50 info tarifa dinamica\resultados 0 info estatica",
+                  r"D:\Onedrive\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\resultados\4 horas varias demandas sin limite de tiempo 50 info tarifa dinamica\resultados 50 info",
+                  r"D:\Onedrive\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\resultados\4 horas varias demandas sin limite de tiempo 50 info tarifa dinamica\resultados 100 info")
 
 
 for directorio in directorios_base:

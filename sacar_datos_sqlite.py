@@ -9,12 +9,10 @@ Created on Wed Apr 22 15:22:32 2020
 import pandas as pd
 import sqlite3
 
-base=r"C:\Users\Tablet\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\archivos aimsun"
-archivos=("\dinamico_20_info.sqlite",
-          "\dinamico_40_info.sqlite",
-          "\dinamico_60_info.sqlite",
-          "\dinamico_80_info.sqlite",
-          "\dinamico_100_info.sqlite") 
+base=r"D:\Onedrive\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\archivos aimsun"
+archivos=("\sin_limite_tiempo_00_info_estatica.sqlite",
+          "\sin_limite_tiempo_100_info.sqlite",
+          "\sin_limite_tiempo_50_info.sqlite") 
 sql_media="""select did from SIM_INFO where type=2"""
 sql_datos=f"""select sid,qmean as Cola_Media,
 fuelc as Consumo,density as Densidad,travel as Distancia_Recorrida,

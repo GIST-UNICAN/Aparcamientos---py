@@ -9,7 +9,7 @@ import glob
 import matplotlib.pyplot as plt
 markers=[".-","v--","s-.","x:","D-"]
 
-directorio=r"C:\Users\Tablet\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\resultados\varios escenarios dinamicos (20 40 60 80 100) informados"
+directorio=r"D:\Onedrive\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\resultados\4 horas varias demandas sin limite de tiempo 50 info tarifa dinamica"
 
 #evolución cuenta vehículos que buscan aparcamiento
 archivos =glob.glob(directorio+"/*cuenta.xlsx")
@@ -18,7 +18,7 @@ for archivo in archivos:
     df=pd.read_excel(archivo,index_col=0).drop(['simulacion'], axis=1)
     gr=df.groupby(['hora']).mean()
     gr=gr.rename(columns={'cuenta':int(archivo.split(" ")[-2].split("\\")[-1])})
-    gr=gr.cumsum()
+    # gr=gr.cumsum()
     df_global=pd.concat((df_global,gr),axis=1)
 
 df_global = df_global.reindex(sorted(df_global.columns), axis=1).drop(13)
@@ -28,12 +28,10 @@ plt.ylabel("n car searching")
 #%%
 #evolución contamienates
 import sqlite3
-base=r"C:\Users\Tablet\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\archivos aimsun"
-archivos=("\dinamico_20_info.sqlite",
-          "\dinamico_40_info.sqlite",
-          "\dinamico_60_info.sqlite",
-          "\dinamico_80_info.sqlite",
-          "\dinamico_100_info.sqlite") 
+base=r"D:\Onedrive\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\archivos aimsun"
+archivos=("\sin_limite_tiempo_50_info.sqlite",)
+          # "\sin_limite_tiempo_100_info.sqlite",
+          # "\sin_limite_tiempo_00_info_estatica.sqlite") 
 sql_media="""select did from SIM_INFO where type=2"""
 sql_datos=f"""select sid,qmean as Cola_Media,
 fuelc as Consumo,density as Densidad,travel as Distancia_Recorrida,
@@ -62,7 +60,7 @@ fig, axes = plt.subplots(nrows=2, ncols=2,figsize=(10,7))
 
 for z,x,y in zip(('CO2','PM','VOC','NOX'),(0,0,1,1),(0,1,0,1)): 
     print(x,y)
-    df_co2= df_base[df_base['variable']==z].cumsum()
+    df_co2= df_base[df_base['variable']==z]#.cumsum()
     df_co2.drop(['variable'], axis=1, inplace=True)
     df_co2 = df_co2.reindex(sorted(df_co2.columns), axis=1).drop(65)
     dfs.append(df_co2)   
@@ -79,7 +77,7 @@ fig.legend(lines, labels, loc = 'lower center', bbox_to_anchor=(0.5, -0.08),titl
 #%%
 # tabla comparativa usuarios parking, escenarios conjuntos
 
-archivos =glob.glob(directorio+"/*informados.xlsx")
+archivos =glob.glob(directorio+"/*info.xlsx")
 df_global_total=pd.DataFrame()
 for archivo in archivos:
     df=pd.read_excel(archivo,index_col=0).drop(['Utilidades iteraciones','Utilidad relativa', 'track','track_secciones','ID','ID.1','Tarifa'], axis=1)
@@ -99,7 +97,7 @@ gr=gr/60
 gr.index=gr.index*5
 gr.drop(65, inplace=True)
 a=plt.figure(); gr.plot(style=markers ); 
-plt.legend((20,40,60,80,100),title='% informed',loc = 'upper center', bbox_to_anchor=(0.5, 1.1)
+plt.legend((50,),title='% informed',loc = 'upper center', bbox_to_anchor=(0.5, 1.1)
            ,bbox_transform=a.transFigure,
           ncol=5, fancybox=True, shadow=True); 
 plt.xlabel("time passed (min)")
@@ -127,12 +125,10 @@ gr1=gr1.T
 
 #%%
 # Tratar de demostrar linealidad
-base=r"C:\Users\Tablet\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\archivos aimsun"
-archivos=("\dinamico_20_info.sqlite",
-          "\dinamico_40_info.sqlite",
-          "\dinamico_60_info.sqlite",
-          "\dinamico_80_info.sqlite",
-          "\dinamico_100_info.sqlite") 
+base=r"D:\Onedrive\OneDrive - UNICAN\Recordar GIST - VARIOS\Aparcamientos\archivos aimsun"
+archivos=("\sin_limite_tiempo_00_info_estatica.sqlite",
+          "\sin_limite_tiempo_100_info.sqlite",
+          "\sin_limite_tiempo_50_info.sqlite") 
 sql_media="""select did from SIM_INFO where type=2"""
 sql_datos=f"""select ent,sid,qmean as Cola_Media from MISYS where sid=0 and  ent !=0 and did!=({sql_media}) order by qmean desc"""
 
@@ -161,7 +157,7 @@ writer.save()
 archivos =glob.glob(directorio+"/*ocupaciones.xlsx")
 df_global_ocu=pd.DataFrame()
 from bisect import bisect_left
-grupos=tuple(x for x in range(0,9000,300))
+grupos=tuple(x for x in range(0,14000,300))
 def grupo(fila):
     return bisect_left(grupos,fila)
 for archivo in archivos:
@@ -180,4 +176,4 @@ for archivo in archivos:
 df_global_ocu = df_global_ocu.reindex(sorted(df_global_ocu.columns), axis=1).drop(13).drop(14).drop(0)
 df_global_ocu.index=df_global_ocu.index*5
 plt.figure(); df_global_ocu.plot(style=markers ); plt.legend(title='% informed'); plt.xlabel("time passed (min)");
-plt.ylabel("n car searching")
+plt.ylabel("ocupancy")

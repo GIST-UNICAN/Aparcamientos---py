@@ -57,7 +57,7 @@ min_parking_time = 5 * 60 #seconds
 max_parking_time = 1200 * 60 #seconds
 
 # para el modelo de distribucion de tiempo de aparcamiento
-avg_parking_duration = 60 * 60 #seconds
+avg_parking_duration = 80 * 60 #seconds
 std_parking_duration = 60 * 60 #seconds
 
 initial_ocupancy = 95 #%
@@ -72,7 +72,7 @@ min_search_time_parking= 1.54 #minutes
 walking_time_to_destination = 120 #seconds
 
 # tarifas, en el caso de estaticas poner siempre la misma (mantener el formato de tupla)
-on_street_rates = (0.5,1,1.75) #(1,2,3.5) #euros/hour
+on_street_rates = (1.45/2,1.45/2,1.45/2) #(0.5,1,1.75) #(1,2,3.5) #euros/hour
 on_street_standart_rate_not_informed = 1.45/2 #euros/hour
 ocupation_ranges = (60,80,100) #%
 time_rates_update = 15 #minutes
@@ -82,7 +82,7 @@ of_street_rate = 1.60#2.75 #euros/hour
 utilidad_relativa_alternativas = 90 #%
 
 # tipos de usuarios
-percentage_informed=50 #%
+percentage_informed=0 #%
 
 # parametros exportacion
 time_occupancy_saved=60 #seconds
